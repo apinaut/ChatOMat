@@ -39,6 +39,7 @@ public class MemberView extends View
 {
 	private MemberModel member;
 	private Bitmap memberImage;
+	private String city = "";
 
 	private static final int HEIGHT = 80;
 	private static final int BORDER = 5;
@@ -69,6 +70,24 @@ public class MemberView extends View
 	public final void setMember( MemberModel member )
 	{
 		this.member = member;
+
+		if ( member.getLocLatitude( ) != 0 || member.getLocLongitude( ) != 0 )
+		{
+			Geocoder gcd = new Geocoder( getContext( ), Locale.getDefault( ) );
+			List<Address> addresses;
+			try
+			{
+				addresses = gcd.getFromLocation( this.member.getLocLatitude( ), this.member.getLocLongitude( ), 1 );
+				if ( addresses.size( ) > 0 )
+				{
+					this.city = addresses.get( 0 ).getAddressLine( 0 );
+				}
+			}
+			catch ( Exception e )
+			{
+				Log.e( "MemberView", "Could not determine position", e );
+			}
+		}
 	}
 
 	public final void setMemberImage( Bitmap memberImage )
@@ -115,20 +134,7 @@ public class MemberView extends View
 			paint.setAntiAlias( true );
 			paint.setTypeface( Typeface.DEFAULT );
 			paint.setTextAlign( Align.RIGHT );
-			Geocoder gcd = new Geocoder( getContext( ), Locale.getDefault( ) );
-			List<Address> addresses;
-			try
-			{
-				addresses = gcd.getFromLocation( this.member.getLocLatitude( ), this.member.getLocLongitude( ), 1 );
-				if ( addresses.size( ) > 0 )
-				{
-					canvas.drawText( addresses.get( 0 ).getAddressLine( 0 ), canvas.getWidth( ) - BORDER, 40f, paint );
-				}
-			}
-			catch ( Exception e )
-			{
-				Log.e( "MemberView", "Could not determine position", e );
-			}
+			canvas.drawText( this.city, canvas.getWidth( ) - BORDER, 40f, paint );
 
 			/* profession */
 			if ( this.member.getProfession( ) != null )

@@ -13,7 +13,6 @@ package com.apiomat.chatomat.adapter;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import android.app.Activity;
@@ -46,18 +45,10 @@ public class MessageAdapter extends ArrayAdapter<MessageModel>
 	 * @param messages
 	 * @param userName
 	 */
-	public MessageAdapter( Context context, List<MessageModel> messages, String userName )
+	public MessageAdapter( Context context, String userName )
 	{
 		super( context, android.R.layout.simple_list_item_1 );
 		this.userName = userName;
-
-		if ( messages != null )
-		{
-			for ( MessageModel att : messages )
-			{
-				add( att );
-			}
-		}
 	}
 
 	@Override
@@ -109,6 +100,12 @@ public class MessageAdapter extends ArrayAdapter<MessageModel>
 			message.setLayoutParams( params ); // causes layout update
 		}
 		return row;
+	}
+
+	public MemberModel getMemberForMessage( int position )
+	{
+		final MessageModel currentMsg = getItem( position );
+		return this.memberOfMessageMap.get( currentMsg );
 	}
 
 	private String getDisplayableDate( Date d )

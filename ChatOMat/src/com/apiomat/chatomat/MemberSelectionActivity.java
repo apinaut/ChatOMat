@@ -31,7 +31,7 @@ public class MemberSelectionActivity extends Activity
 
 		final Intent i = getIntent( );
 		this.conv =
-			( ConversationModel ) i.getExtras( ).getSerializable( MainActivity.CONVERSATION );
+			( ConversationModel ) i.getExtras( ).getSerializable( MainActivity.EXTRA_CONVERSATION );
 
 		final ListView list = ( ListView ) findViewById( R.id.listViewAttendees );
 		this.adapter = new MemberAdapter( this );
@@ -54,17 +54,11 @@ public class MemberSelectionActivity extends Activity
 				}
 				Intent intent = new Intent( );
 				MemberModel m = ( MemberModel ) list.getItemAtPosition( position );
-				intent.putExtra( MainActivity.USERNAME, m.getUserName( ) );
+				intent.putExtra( MainActivity.EXTRA_USERNAME, m.getUserName( ) );
 				setResult( RESULT_OK, intent );
 				finish( );
 			}
 		} );
-	}
-
-	@Override
-	protected void onResume( )
-	{
-		super.onResume( );
 
 		LoadMembersTask task = new LoadMembersTask( );
 		task.execute( );

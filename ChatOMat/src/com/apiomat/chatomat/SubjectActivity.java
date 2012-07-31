@@ -30,6 +30,7 @@ public class SubjectActivity extends Activity
 	private MessageAdapter messageAdapter;
 	private AttendeeAdapter attendeeAdapter;
 	private Timer t;
+	private int position;
 
 	@Override
 	public void onCreate( Bundle savedInstanceState )
@@ -39,7 +40,8 @@ public class SubjectActivity extends Activity
 
 		Intent i = getIntent( );
 		this.conv =
-			( ConversationModel ) i.getExtras( ).getSerializable( MainActivity.CONVERSATION );
+			( ConversationModel ) i.getExtras( ).getSerializable( MainActivity.EXTRA_CONVERSATION );
+		this.position = i.getExtras( ).getInt( MainActivity.EXTRA_POSITION );
 
 		/* Draw grid of attendees */
 		final GridView list = ( GridView ) findViewById( R.id.attendeesList );
@@ -52,19 +54,9 @@ public class SubjectActivity extends Activity
 
 		/* Draw messages */
 		final ListView lst = ( ( ListView ) findViewById( R.id.messageList ) );
-		try
-		{
-			LoadConversationMessagesTask task = new LoadConversationMessagesTask( );
-			task.execute( );
-			final ListView mlist = ( ListView ) findViewById( R.id.messageList );
-			this.messageAdapter = new MessageAdapter( this, task.get( ), MemberCache.getMyself( ) );
-			mlist.setAdapter( this.messageAdapter );
-		}
-		catch ( Exception e )
-		{
-			Log.e( "LoadConversationsTask", "Error loading messages", e );
-		}
-		lst.setSelection( lst.getCount( ) - 1 );
+		final ListView mlist = ( ListView ) findViewById( R.id.messageList );
+		this.messageAdapter = new MessageAdapter( this, MemberCache.getMyself( ) );
+		mlist.setAdapter( this.messageAdapter );
 
 		/* new message */
 		final EditText newMessage = ( EditText ) findViewById( R.id.newMessageText );
@@ -104,6 +96,16 @@ public class SubjectActivity extends Activity
 	 */
 	public void goBack( View view )
 	{
+		Intent intent = new Intent( );
+		setResult( RESULT_OK, intent );
+		if ( this.messageAdapter.getCount( ) > 0 )
+		{
+			MessageModel msg = this.messageAdapter.getItem( this.messageAdapter.getCount( ) - 1 );
+			intent.putExtra( MainActivity.EXTRA_LAST_MESSAGE, msg );
+			intent.putExtra( MainActivity.EXTRA_MEMBER, this.messageAdapter.getMemberForMessage( this.position ) );
+			intent.putExtra( MainActivity.EXTRA_POSITION, this.position );
+		}
+
 		finish( );
 	}
 
@@ -115,7 +117,7 @@ public class SubjectActivity extends Activity
 	public void addAttendee( View view )
 	{
 		Intent intent = new Intent( this, MemberSelectionActivity.class );
-		intent.putExtra( MainActivity.CONVERSATION, this.conv );
+		intent.putExtra( MainActivity.EXTRA_CONVERSATION, this.conv );
 		startActivityForResult( intent, 0 );
 	}
 
@@ -125,7 +127,7 @@ public class SubjectActivity extends Activity
 		super.onActivityResult( requestCode, resultCode, intent );
 		if ( requestCode == 0 && resultCode == RESULT_OK )
 		{
-			String newAttendee = intent.getExtras( ).getString( MainActivity.USERNAME );
+			String newAttendee = intent.getExtras( ).getString( MainActivity.EXTRA_USERNAME );
 			this.attendeeAdapter.add( newAttendee );
 		}
 	}
@@ -134,9 +136,10 @@ public class SubjectActivity extends Activity
 	protected void onResume( )
 	{
 		super.onRestart( );
+
 		/* Start timer to fetch messages periodically */
 		this.t = new Timer( );
-		this.t.scheduleAtFixedRate( new RefreshMessagesTimer( ), 20000, 20000 );
+		this.t.scheduleAtFixedRate( new RefreshMessagesTimer( ), 0, 20000 );
 	}
 
 	@Override
@@ -204,7 +207,7 @@ public class SubjectActivity extends Activity
 			t.execute( );
 			try
 			{
-				for ( MessageModel mm : t.get( ) )
+				for ( final MessageModel mm : t.get( ) )
 				{
 					boolean alreadyExists = false;
 					for ( int i = 0; i < SubjectActivity.this.messageAdapter.getCount( ); i++ )
@@ -217,7 +220,15 @@ public class SubjectActivity extends Activity
 					}
 					if ( !alreadyExists )
 					{
-						SubjectActivity.this.messageAdapter.add( mm );
+						SubjectActivity.this.runOnUiThread( new Runnable( )
+						{
+							@Override
+							public void run( )
+							{
+								SubjectActivity.this.messageAdapter.add( mm );
+							}
+						} );
+
 					}
 				}
 			}

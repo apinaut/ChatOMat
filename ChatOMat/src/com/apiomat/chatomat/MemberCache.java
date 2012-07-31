@@ -52,7 +52,8 @@ public class MemberCache
 
 	public static boolean containsImage( String userName )
 	{
-		return getInstance( ).mapUsernameToImage.containsKey( userName );
+		return getInstance( ).mapUsernameToImage.containsKey( userName ) &&
+			getInstance( ).mapUsernameToImage.get( userName ) != null;
 	}
 
 	public static MemberModel getMember( String userName )
@@ -64,7 +65,7 @@ public class MemberCache
 	{
 		try
 		{
-			if ( !containsImage( userName ) )
+			if ( !getInstance( ).mapUsernameToImage.containsKey( userName ) )
 			{
 				LoadAttendeeImageTask task = getInstance( ).new LoadAttendeeImageTask( );
 				task.execute( userName );
@@ -92,12 +93,18 @@ public class MemberCache
 
 	public static void putMember( MemberModel member )
 	{
-		getInstance( ).mapUserNameToMember.put( member.getUserName( ), member );
+		if ( member != null )
+		{
+			getInstance( ).mapUserNameToMember.put( member.getUserName( ), member );
+		}
 	}
 
 	public static void putImage( String userName, Bitmap image )
 	{
-		getInstance( ).mapUsernameToImage.put( userName, image );
+		if ( image != null )
+		{
+			getInstance( ).mapUsernameToImage.put( userName, image );
+		}
 	}
 
 	public static final String getMyself( )

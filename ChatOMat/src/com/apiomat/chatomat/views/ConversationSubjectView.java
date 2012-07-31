@@ -44,6 +44,9 @@ public class ConversationSubjectView extends View
 	private static final int HEIGHT = 80;
 	private static final int BORDER = 10;
 
+	private MemberModel lastSender;
+	private MessageModel lastMessage;
+
 	public ConversationSubjectView( Context context, AttributeSet attrs, int defStyle )
 	{
 		super( context, attrs, defStyle );
@@ -65,6 +68,35 @@ public class ConversationSubjectView extends View
 	public final void setConversation( ConversationModel conversation )
 	{
 		this.conversation = conversation;
+
+		try
+		{
+			LoadConversationMessagessTask task = new LoadConversationMessagessTask( );
+			task.execute( );
+			List<MessageModel> mms = task.get( );
+			if ( mms != null && mms.size( ) > 0 )
+			{
+				this.lastMessage = mms.get( mms.size( ) - 1 );
+				LoadSenderTask task2 = new LoadSenderTask( );
+				task2.execute( this.lastMessage );
+				this.lastSender = task2.get( );
+			}
+		}
+		catch ( Exception e )
+		{
+			Log.e( "ConversationSubject",
+				"Messages could not be loaded from conversation " + this.conversation.getSubject( ), e );
+		}
+	}
+
+	public final void setLastSender( MemberModel lastSender )
+	{
+		this.lastSender = lastSender;
+	}
+
+	public final void setLastMessage( MessageModel lastMessage )
+	{
+		this.lastMessage = lastMessage;
 	}
 
 	@Override
@@ -93,50 +125,37 @@ public class ConversationSubjectView extends View
 			canvas.drawText( date, canvas.getWidth( ) - BORDER, 23f, paint );
 
 			/* last message */
-			try
+			if ( this.lastMessage != null )
 			{
-				LoadConversationMessagessTask task = new LoadConversationMessagessTask( );
-				task.execute( );
-				List<MessageModel> mms = task.get( );
-				if ( mms != null && mms.size( ) > 0 )
+				paint = new Paint( );
+				paint.setColor( Color.BLACK );
+				paint.setAntiAlias( true );
+				paint.setTypeface( Typeface.DEFAULT );
+				paint.setTextSize( 24 );
+				String text =
+					( this.lastSender != null ? this.lastSender.getUserName( ) + ": " : "" ) +
+						this.lastMessage.getText( );
+				if ( text.length( ) > 50 )// TODO berechnen, nicht schaetzen
 				{
-					MessageModel mm = mms.get( mms.size( ) - 1 );
-					LoadSenderTask task2 = new LoadSenderTask( );
-					task2.execute( mm );
-					MemberModel lastSender = task2.get( );
-
-					paint = new Paint( );
-					paint.setColor( Color.BLACK );
-					paint.setAntiAlias( true );
-					paint.setTypeface( Typeface.DEFAULT );
-					paint.setTextSize( 24 );
-					String text = lastSender.getUserName( ) + ": " + mm.getText( );
-					if ( text.length( ) > 50 )// TODO berechnen, nicht schaetzen
-					{
-						text = text.substring( 0, 50 );
-					}
-					canvas.drawText( text, HEIGHT + 20, HEIGHT - BORDER, paint );
-
-					/* sender image */
-					Bitmap bm = MemberCache.getImage( lastSender.getUserName( ) );
-					Resources res = getResources( );
-
-					BitmapDrawable drawable =
-						( bm != null ) ? new BitmapDrawable( res, bm ) : ( BitmapDrawable ) res
-							.getDrawable( R.drawable.profilimg_default );
-					drawable.setBounds( BORDER, BORDER, HEIGHT - BORDER, HEIGHT - BORDER );
-					drawable.draw( canvas );
+					text = text.substring( 0, 50 );
 				}
+				canvas.drawText( text, HEIGHT + 20, HEIGHT - BORDER, paint );
 			}
-			catch ( Exception e )
+
+			/* sender image */
+			Resources res = getResources( );
+			BitmapDrawable drawable = ( BitmapDrawable ) res.getDrawable( R.drawable.profilimg_default );
+			if ( this.lastSender != null && MemberCache.containsImage( this.lastSender.getUserName( ) ) )
 			{
-				Log.e( "ConversationSubject",
-					"Messages could not be loaded from conversation " + this.conversation.getSubject( ), e );
+				Bitmap bm = MemberCache.getImage( this.lastSender.getUserName( ) );
+				drawable = new BitmapDrawable( res, bm );
 			}
+
+			drawable.setBounds( BORDER, BORDER, HEIGHT - BORDER, HEIGHT - BORDER );
+			drawable.draw( canvas );
 		}
 	}
 
-	// TODO vermeiden
 	private class LoadSenderTask extends AsyncTask<MessageModel, Void, MemberModel>
 	{
 		@Override
@@ -154,7 +173,6 @@ public class ConversationSubjectView extends View
 		}
 	}
 
-	// TODO vermeiden
 	private class LoadConversationMessagessTask extends AsyncTask<Void, Void, List<MessageModel>>
 	{
 		@Override

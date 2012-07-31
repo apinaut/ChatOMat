@@ -31,6 +31,7 @@ import com.apiomat.chatomat.adapter.ConversationAdapter;
 import com.apiomat.frontend.Datastore;
 import com.apiomat.frontend.basics.MemberModel;
 import com.apiomat.frontend.chat.ConversationModel;
+import com.apiomat.frontend.chat.MessageModel;
 
 /**
  * First screen showing a list of conversations
@@ -39,12 +40,16 @@ import com.apiomat.frontend.chat.ConversationModel;
  */
 public class MainActivity extends Activity
 {
+	public static final String EXTRA_POSITION = "position";
+	public static final String EXTRA_CONVERSATION = "conv";
+	public static final String EXTRA_USERNAME = "username";
+	public static final String EXTRA_MEMBER = "member";
+	public static final String EXTRA_LAST_MESSAGE = "lastMessageText";
+
+	private static final int EXPECTED_SUBJECT_CODE = 1;
+	private static final int EXPECTED_PROFILE_CODE = 0;
+
 	private ConversationAdapter adapter;
-
-	static String CONVERSATION = "conv";
-	static String USERNAME = "username";
-	static String MEMBER = "member";
-
 	private Timer t;
 
 	@Override
@@ -64,18 +69,19 @@ public class MainActivity extends Activity
 				int position, long id )
 			{
 				Intent intent = new Intent( parent.getContext( ), SubjectActivity.class );
-				intent.putExtra( CONVERSATION, ( Serializable ) list.getAdapter( ).getItem( position ) );
-				startActivity( intent );
+				intent.putExtra( EXTRA_CONVERSATION, ( Serializable ) list.getAdapter( ).getItem( position ) );
+				intent.putExtra( EXTRA_POSITION, position );
+				startActivityForResult( intent, EXPECTED_SUBJECT_CODE );
 			}
 		} );
 
 		/* get member back from store or create a new one */
-		SharedPreferences mPrefs = getSharedPreferences( MainActivity.MEMBER, MODE_PRIVATE );
+		SharedPreferences mPrefs = getSharedPreferences( MainActivity.EXTRA_MEMBER, MODE_PRIVATE );
 		if ( !mPrefs.contains( "userName" ) || !mPrefs.contains( "password" ) ||
 			mPrefs.getString( "password", "" ) == "" )
 		{
 			Intent intent = new Intent( this, ProfileActivity.class );
-			startActivityForResult( intent, 0 );
+			startActivityForResult( intent, EXPECTED_PROFILE_CODE );
 		}
 		else
 		{
@@ -95,40 +101,46 @@ public class MainActivity extends Activity
 	{
 		super.onResume( );
 
-		if ( MemberCache.getMySelf( ) != null )
-		{
-			@SuppressWarnings( "synthetic-access" )
-			LoadConversationsTask task = new LoadConversationsTask( );
-			try
-			{
-				task.execute( );
-				this.adapter.clear( );
-				for ( ConversationModel cm : task.get( ) )
-				{
-					this.adapter.add( cm );
-				}
-
-			}
-			catch ( Exception e )
-			{
-				Log.e( "fillWithConversations", "Error loading conversations", e );
-			}
-		}
+		// if ( MemberCache.getMySelf( ) != null )
+		// {
+		// LoadConversationsTask task = new LoadConversationsTask( );
+		// try
+		// {
+		// task.execute( );
+		// this.adapter.clear( );
+		// for ( ConversationModel cm : task.get( ) )
+		// {
+		// this.adapter.add( cm );
+		// }
+		//
+		// }
+		// catch ( Exception e )
+		// {
+		// Log.e( "fillWithConversations", "Error loading conversations", e );
+		// }
+		// }
 
 		/* Start timer to fetch messages periodically */
 		this.t = new Timer( );
-		this.t.scheduleAtFixedRate( new RefreshConversationsTimer( ), 20000, 10000 );
+		this.t.scheduleAtFixedRate( new RefreshConversationsTimer( ), 0, 10000 );
 	}
 
 	@Override
 	protected void onActivityResult( int requestCode, int resultCode, Intent intent )
 	{
 		super.onActivityResult( requestCode, resultCode, intent );
-		if ( requestCode == 0 && resultCode == RESULT_OK )
+		if ( requestCode == EXPECTED_PROFILE_CODE && resultCode == RESULT_OK )
 		{
 			Datastore.configure( MemberModel.baseURL, MemberModel.apiKey, MemberCache.getMySelf( ).getUserName( ),
 				MemberCache.getMySelf( ).getPassword( ) );
 			onResume( );
+		}
+		else if ( requestCode == EXPECTED_SUBJECT_CODE && resultCode == RESULT_OK )
+		{
+			MemberModel sender = ( MemberModel ) intent.getExtras( ).getSerializable( EXTRA_MEMBER );
+			MessageModel msg = ( MessageModel ) intent.getExtras( ).getSerializable( EXTRA_LAST_MESSAGE );
+			int position = intent.getExtras( ).getInt( EXTRA_POSITION );
+			this.adapter.setLastMessage( position, msg, sender );
 		}
 	}
 
@@ -147,7 +159,7 @@ public class MainActivity extends Activity
 	public void openProfile( @SuppressWarnings( "unused" ) View view )
 	{
 		Intent intent = new Intent( this, ProfileActivity.class );
-		startActivityForResult( intent, 0 );
+		startActivityForResult( intent, EXPECTED_PROFILE_CODE );
 	}
 
 	/**
@@ -191,7 +203,8 @@ public class MainActivity extends Activity
 					{
 						MainActivity.this.adapter.add( conversation );
 						Intent intent = new Intent( MainActivity.this, SubjectActivity.class );
-						intent.putExtra( CONVERSATION, conversation );
+						intent.putExtra( EXTRA_CONVERSATION, conversation );
+						intent.putExtra( EXTRA_POSITION, MainActivity.this.adapter.getCount( ) - 1 );
 						startActivity( intent );
 					}
 					else
@@ -261,7 +274,7 @@ public class MainActivity extends Activity
 			t.execute( );
 			try
 			{
-				for ( ConversationModel mm : t.get( ) )
+				for ( final ConversationModel mm : t.get( ) )
 				{
 					boolean alreadyExists = false;
 					for ( int i = 0; i < MainActivity.this.adapter.getCount( ); i++ )
@@ -274,7 +287,14 @@ public class MainActivity extends Activity
 					}
 					if ( !alreadyExists )
 					{
-						MainActivity.this.adapter.add( mm );
+						MainActivity.this.runOnUiThread( new Runnable( )
+						{
+							@Override
+							public void run( )
+							{
+								MainActivity.this.adapter.add( mm );
+							}
+						} );
 					}
 				}
 			}

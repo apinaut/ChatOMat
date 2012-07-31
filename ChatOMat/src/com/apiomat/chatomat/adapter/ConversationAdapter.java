@@ -19,13 +19,17 @@ import android.widget.ArrayAdapter;
 
 import com.apiomat.chatomat.R;
 import com.apiomat.chatomat.views.ConversationSubjectView;
+import com.apiomat.frontend.basics.MemberModel;
 import com.apiomat.frontend.chat.ConversationModel;
+import com.apiomat.frontend.chat.MessageModel;
 
 /**
  * @author andreasfey
  */
 public class ConversationAdapter extends ArrayAdapter<ConversationModel>
 {
+	ViewGroup lastParent;
+
 	/**
 	 * @param context
 	 */
@@ -37,12 +41,24 @@ public class ConversationAdapter extends ArrayAdapter<ConversationModel>
 	@Override
 	public View getView( int position, View convertView, ViewGroup parent )
 	{
+		this.lastParent = parent;
+
 		LayoutInflater inflater = ( ( Activity ) this.getContext( ) ).getLayoutInflater( );
 		View row = inflater.inflate( R.layout.conversation_listview, parent, false );
 
 		ConversationSubjectView l = ( ConversationSubjectView ) row.findViewById( R.id.csView );
 		l.setConversation( getItem( position ) );
-		l.invalidate( );
 		return row;
 	}
+
+	public void setLastMessage( int position, MessageModel lastMessage, MemberModel sender )
+	{
+		LayoutInflater inflater = ( ( Activity ) this.getContext( ) ).getLayoutInflater( );
+		View row = inflater.inflate( R.layout.conversation_listview, this.lastParent, false );
+
+		ConversationSubjectView l = ( ConversationSubjectView ) row.findViewById( R.id.csView );
+		l.setLastMessage( lastMessage );
+		l.setLastSender( sender );
+	}
+
 }

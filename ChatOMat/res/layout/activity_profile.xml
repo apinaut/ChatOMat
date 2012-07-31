@@ -44,7 +44,8 @@
                 android:layout_gravity="center_vertical"
                 android:gravity="center"
                 android:text="First name:"
-                android:textSize="@dimen/padding_large" />
+                android:textSize="@dimen/padding_large" 
+                android:textColor="#000000"/>
 
             <EditText
                 android:id="@+id/profileFirstName"
@@ -74,7 +75,8 @@
                 android:layout_gravity="center_vertical"
                 android:gravity="center"
                 android:text="Last name:"
-                android:textSize="@dimen/padding_large" />
+                android:textSize="@dimen/padding_large"  
+                android:textColor="#000000"/>
 
             <EditText
                 android:id="@+id/profileLastName"
@@ -107,7 +109,8 @@
                 android:layout_gravity="center_vertical"
                 android:gravity="center"
                 android:text="Password:"
-                android:textSize="@dimen/padding_large" />
+                android:textSize="@dimen/padding_large" 
+                android:textColor="#000000"/>
 
             <EditText
                 android:id="@+id/profilePassword"
@@ -135,7 +138,8 @@
                 android:layout_gravity="center_vertical"
                 android:gravity="center"
                 android:text="Company:"
-                android:textSize="@dimen/padding_large" />
+                android:textSize="@dimen/padding_large" 
+                android:textColor="#000000"/>
 
             <EditText
                 android:id="@+id/profileCompany"
@@ -163,7 +167,8 @@
                 android:layout_gravity="center_vertical"
                 android:gravity="center"
                 android:text="Profession:"
-                android:textSize="@dimen/padding_large" />
+                android:textSize="@dimen/padding_large"  
+                android:textColor="#000000"/>
 
             <EditText
                 android:id="@+id/profileProfession"
@@ -191,7 +196,8 @@
                 android:layout_gravity="center_vertical"
                 android:gravity="center"
                 android:text="Sex:"
-                android:textSize="@dimen/padding_large" />
+                android:textSize="@dimen/padding_large"  
+                android:textColor="#000000"/>
 
             <Spinner
                 android:id="@+id/profileSex"
@@ -218,7 +224,8 @@
                 android:layout_gravity="center_vertical"
                 android:gravity="center"
                 android:text="Age:"
-                android:textSize="@dimen/padding_large" />
+                android:textSize="@dimen/padding_large" 
+                android:textColor="#000000"/>
 
             <EditText
                 android:id="@+id/profileAge"

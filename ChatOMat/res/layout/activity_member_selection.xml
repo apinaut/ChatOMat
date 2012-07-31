@@ -19,7 +19,8 @@
         android:layout_below="@+id/headerLayout"
         android:background="@drawable/bg_liste"
         android:divider="@drawable/trenner_liste"
-        android:showDividers="middle" >
+        android:showDividers="middle" 
+        android:cacheColorHint="#00000000">
     </ListView>
 
 </RelativeLayout>

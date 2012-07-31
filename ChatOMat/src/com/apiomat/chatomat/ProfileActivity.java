@@ -13,6 +13,7 @@ import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationManager;
 import android.net.Uri;
@@ -172,7 +173,9 @@ public class ProfileActivity extends Activity
 			}
 
 			LocationManager lm = ( LocationManager ) getSystemService( Context.LOCATION_SERVICE );
-			Location location = lm.getLastKnownLocation( LocationManager.GPS_PROVIDER );
+			Criteria c = new Criteria( );
+			c.setPowerRequirement( Criteria.POWER_LOW );
+			Location location = lm.getLastKnownLocation( lm.getBestProvider( c, true ) );
 			this.member.setLocLongitude( location.getLongitude( ) );
 			this.member.setLocLatitude( location.getLatitude( ) );
 
@@ -231,7 +234,7 @@ public class ProfileActivity extends Activity
 		}
 	}
 
-	public void changeProfileImage( View view )
+	public void changeProfileImage( @SuppressWarnings( "unused" ) View view )
 	{
 		Intent i = new Intent( Intent.ACTION_PICK,
 			android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI );
@@ -240,7 +243,6 @@ public class ProfileActivity extends Activity
 
 	private class CreateOrLoadMemberTask extends AsyncTask<Void, Void, Void>
 	{
-		@SuppressWarnings( "synthetic-access" )
 		@Override
 		protected Void doInBackground( Void... m )
 		{
@@ -340,7 +342,7 @@ public class ProfileActivity extends Activity
 	{
 		super.onPause( );
 
-		SharedPreferences mPrefs = getSharedPreferences( MainActivity.MEMBER, MODE_PRIVATE );
+		SharedPreferences mPrefs = getSharedPreferences( MainActivity.EXTRA_MEMBER, MODE_PRIVATE );
 		SharedPreferences.Editor ed = mPrefs.edit( );
 		ed.putString( "userName", this.member.getUserName( ) );
 		if ( this.member.getPassword( ) != "" )
