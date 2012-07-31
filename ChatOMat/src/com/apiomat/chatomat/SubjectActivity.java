@@ -1,0 +1,230 @@
+package com.apiomat.chatomat;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
+
+import android.app.Activity;
+import android.content.Intent;
+import android.os.AsyncTask;
+import android.os.Bundle;
+import android.util.Log;
+import android.view.KeyEvent;
+import android.view.Menu;
+import android.view.View;
+import android.widget.EditText;
+import android.widget.GridView;
+import android.widget.ListView;
+import android.widget.TextView;
+import android.widget.TextView.OnEditorActionListener;
+
+import com.apiomat.chatomat.adapter.AttendeeAdapter;
+import com.apiomat.chatomat.adapter.MessageAdapter;
+import com.apiomat.frontend.chat.ConversationModel;
+import com.apiomat.frontend.chat.MessageModel;
+
+public class SubjectActivity extends Activity
+{
+	private ConversationModel conv;
+	private MessageAdapter messageAdapter;
+	private AttendeeAdapter attendeeAdapter;
+	private Timer t;
+
+	@Override
+	public void onCreate( Bundle savedInstanceState )
+	{
+		super.onCreate( savedInstanceState );
+		setContentView( R.layout.activity_subject );
+
+		Intent i = getIntent( );
+		this.conv =
+			( ConversationModel ) i.getExtras( ).getSerializable( MainActivity.CONVERSATION );
+
+		/* Draw grid of attendees */
+		final GridView list = ( GridView ) findViewById( R.id.attendeesList );
+		this.attendeeAdapter = new AttendeeAdapter( this, this.conv.getAttendeeUserNames( ) );
+		list.setAdapter( this.attendeeAdapter );
+
+		/* Draw subject title */
+		TextView subjectText = ( TextView ) findViewById( R.id.subjectTitle );
+		subjectText.setText( "Conversation subject: " + this.conv.getSubject( ) );
+
+		/* Draw messages */
+		final ListView lst = ( ( ListView ) findViewById( R.id.messageList ) );
+		try
+		{
+			LoadConversationMessagesTask task = new LoadConversationMessagesTask( );
+			task.execute( );
+			final ListView mlist = ( ListView ) findViewById( R.id.messageList );
+			this.messageAdapter = new MessageAdapter( this, task.get( ), MemberCache.getMyself( ) );
+			mlist.setAdapter( this.messageAdapter );
+		}
+		catch ( Exception e )
+		{
+			Log.e( "LoadConversationsTask", "Error loading messages", e );
+		}
+		lst.setSelection( lst.getCount( ) - 1 );
+
+		/* new message */
+		final EditText newMessage = ( EditText ) findViewById( R.id.newMessageText );
+		newMessage.setOnEditorActionListener( new OnEditorActionListener( )
+		{
+			@Override
+			public boolean onEditorAction( TextView paramTextView, int paramInt, KeyEvent paramKeyEvent )
+			{
+				if ( newMessage.getText( ).toString( ).length( ) > 0 )
+				{
+					AddMessagesTask task = new AddMessagesTask( );
+					task.execute( newMessage.getText( ).toString( ) );
+
+					try
+					{
+						MessageModel mm = task.get( );
+						SubjectActivity.this.messageAdapter.add( mm );
+					}
+					catch ( Exception e )
+					{
+						Log.e( "SubjectActivity", "Error creating new message", e );
+					}
+					newMessage.setText( "" );
+
+					lst.setSelection( lst.getCount( ) - 1 );
+				}
+				return false;
+			}
+		} );
+
+	}
+
+	/**
+	 * Navigates back to the main activity
+	 * 
+	 * @param view
+	 */
+	public void goBack( View view )
+	{
+		finish( );
+	}
+
+	/**
+	 * Opens the list of members
+	 * 
+	 * @param view
+	 */
+	public void addAttendee( View view )
+	{
+		Intent intent = new Intent( this, MemberSelectionActivity.class );
+		intent.putExtra( MainActivity.CONVERSATION, this.conv );
+		startActivityForResult( intent, 0 );
+	}
+
+	@Override
+	protected void onActivityResult( int requestCode, int resultCode, Intent intent )
+	{
+		super.onActivityResult( requestCode, resultCode, intent );
+		if ( requestCode == 0 && resultCode == RESULT_OK )
+		{
+			String newAttendee = intent.getExtras( ).getString( MainActivity.USERNAME );
+			this.attendeeAdapter.add( newAttendee );
+		}
+	}
+
+	@Override
+	protected void onResume( )
+	{
+		super.onRestart( );
+		/* Start timer to fetch messages periodically */
+		this.t = new Timer( );
+		this.t.scheduleAtFixedRate( new RefreshMessagesTimer( ), 20000, 20000 );
+	}
+
+	@Override
+	protected void onPause( )
+	{
+		super.onPause( );
+		this.t.cancel( );
+	}
+
+	@Override
+	public boolean onCreateOptionsMenu( Menu menu )
+	{
+		getMenuInflater( ).inflate( R.menu.activity_subject, menu );
+		return true;
+	}
+
+	private class LoadConversationMessagesTask extends
+		AsyncTask<Void, Void, List<MessageModel>>
+	{
+		@Override
+		protected List<MessageModel> doInBackground( Void... nix )
+		{
+			try
+			{
+				return SubjectActivity.this.conv.loadMessages( "" );
+			}
+			catch ( Exception e )
+			{
+				Log.e( "LoadConversationsTask", "Error loading messages", e );
+				return new ArrayList<MessageModel>( );
+			}
+		}
+	}
+
+	private class AddMessagesTask extends AsyncTask<String, Void, MessageModel>
+	{
+		@Override
+		protected MessageModel doInBackground( String... msg )
+		{
+			try
+			{
+				MessageModel mm = new MessageModel( );
+				mm.setText( msg[ 0 ] );
+				mm.save( );
+				mm.postSender( MemberCache.getMySelf( ) );
+
+				SubjectActivity.this.conv.postMessages( mm );
+
+				return mm;
+			}
+			catch ( Exception e )
+			{
+				Log.e( "AddMessagesTask", "Error creating message", e );
+			}
+			return null;
+		}
+	}
+
+	private class RefreshMessagesTimer extends TimerTask
+	{
+		@Override
+		public void run( )
+		{
+			LoadConversationMessagesTask t = new LoadConversationMessagesTask( );
+			t.execute( );
+			try
+			{
+				for ( MessageModel mm : t.get( ) )
+				{
+					boolean alreadyExists = false;
+					for ( int i = 0; i < SubjectActivity.this.messageAdapter.getCount( ); i++ )
+					{
+						if ( SubjectActivity.this.messageAdapter.getItem( i ).getHref( ).equals( mm.getHref( ) ) )
+						{
+							alreadyExists = true;
+							break;
+						}
+					}
+					if ( !alreadyExists )
+					{
+						SubjectActivity.this.messageAdapter.add( mm );
+					}
+				}
+			}
+			catch ( Exception e )
+			{
+				Log.e( "RefreshMessagesTimer", "Error refreshing messages", e );
+			}
+		}
+	}
+}

@@ -1,0 +1,49 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent" >
+
+    <LinearLayout
+        android:id="@+id/headerLayout"
+        android:layout_width="match_parent"
+        android:layout_height="40dip"
+        android:background="@drawable/conversations_header"
+        android:gravity="right" >
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/trenner_headbar" />
+
+        <ImageView
+            android:id="@+id/imageApinautWhite"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/apiomat_weiss" 
+            android:onClick="openProfile"/>
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/trenner_headbar" />
+
+        <ImageView
+            android:id="@+id/imagePlus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/plus" 
+            android:onClick="addConversation"/>
+    </LinearLayout>
+
+    <ListView
+        android:id="@+id/conversationsList"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:layout_below="@+id/headerLayout"
+        android:background="@drawable/bg_liste"
+        android:showDividers="middle" 
+        android:divider="@drawable/trenner_liste">
+    </ListView>
+
+
+</RelativeLayout>

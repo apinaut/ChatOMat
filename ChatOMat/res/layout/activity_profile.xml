@@ -1,0 +1,245 @@
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent" >
+
+    <LinearLayout
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_liste"
+        android:orientation="vertical" >
+
+        <LinearLayout
+            android:id="@+id/headerLayout"
+            android:layout_width="match_parent"
+            android:layout_height="40dip"
+            android:background="@drawable/apinauts_header"
+            android:gravity="right"
+            android:onClick="goBack" />
+
+        <ImageButton
+            android:id="@+id/profileImage"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:adjustViewBounds="true"
+            android:background="@drawable/profilimg_bg"
+            android:maxHeight="100dip"
+            android:scaleType="fitXY"
+            android:onClick="changeProfileImage"
+            android:src="@drawable/profilimg_default" />
+
+        <ImageView
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:src="@drawable/trenner_liste" />
+
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal" >
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="fill_parent"
+                android:layout_gravity="center_vertical"
+                android:gravity="center"
+                android:text="First name:"
+                android:textSize="@dimen/padding_large" />
+
+            <EditText
+                android:id="@+id/profileFirstName"
+                android:layout_width="0dip"
+                android:layout_height="fill_parent"
+                android:layout_marginTop="4dip"
+                android:layout_weight="1"
+                android:inputType="textPersonName" >
+
+                <requestFocus />
+            </EditText>
+        </LinearLayout>
+
+        <ImageView
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:src="@drawable/trenner_liste" />
+
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal" >
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="fill_parent"
+                android:layout_gravity="center_vertical"
+                android:gravity="center"
+                android:text="Last name:"
+                android:textSize="@dimen/padding_large" />
+
+            <EditText
+                android:id="@+id/profileLastName"
+                android:layout_width="0dip"
+                android:layout_height="fill_parent"
+                android:layout_marginTop="4dip"
+                android:layout_weight="1"
+                android:inputType="textPersonName" >
+            </EditText>
+        </LinearLayout>
+
+        <ImageView
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:src="@drawable/trenner_liste" />
+
+        <ImageView
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:src="@drawable/trenner_liste" />
+
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal" >
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="fill_parent"
+                android:layout_gravity="center_vertical"
+                android:gravity="center"
+                android:text="Password:"
+                android:textSize="@dimen/padding_large" />
+
+            <EditText
+                android:id="@+id/profilePassword"
+                android:layout_width="0dip"
+                android:layout_height="fill_parent"
+                android:layout_marginTop="4dip"
+                android:layout_weight="1"
+                android:inputType="textPassword" >
+            </EditText>
+        </LinearLayout>
+
+        <ImageView
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:src="@drawable/trenner_liste" />
+
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal" >
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="fill_parent"
+                android:layout_gravity="center_vertical"
+                android:gravity="center"
+                android:text="Company:"
+                android:textSize="@dimen/padding_large" />
+
+            <EditText
+                android:id="@+id/profileCompany"
+                android:layout_width="0dip"
+                android:layout_height="fill_parent"
+                android:layout_marginTop="4dip"
+                android:layout_weight="1"
+                android:inputType="textPersonName" >
+            </EditText>
+        </LinearLayout>
+
+        <ImageView
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:src="@drawable/trenner_liste" />
+
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal" >
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="fill_parent"
+                android:layout_gravity="center_vertical"
+                android:gravity="center"
+                android:text="Profession:"
+                android:textSize="@dimen/padding_large" />
+
+            <EditText
+                android:id="@+id/profileProfession"
+                android:layout_width="0dip"
+                android:layout_height="fill_parent"
+                android:layout_marginTop="4dip"
+                android:layout_weight="1"
+                android:inputType="textPersonName" >
+            </EditText>
+        </LinearLayout>
+
+        <ImageView
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:src="@drawable/trenner_liste" />
+
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal" >
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="fill_parent"
+                android:layout_gravity="center_vertical"
+                android:gravity="center"
+                android:text="Sex:"
+                android:textSize="@dimen/padding_large" />
+
+            <Spinner
+                android:id="@+id/profileSex"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dip"
+                android:layout_weight="1"
+                android:entries="@array/sex" />
+        </LinearLayout>
+
+        <ImageView
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:src="@drawable/trenner_liste" />
+
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal" >
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="fill_parent"
+                android:layout_gravity="center_vertical"
+                android:gravity="center"
+                android:text="Age:"
+                android:textSize="@dimen/padding_large" />
+
+            <EditText
+                android:id="@+id/profileAge"
+                android:layout_width="0dip"
+                android:layout_height="fill_parent"
+                android:layout_marginTop="4dip"
+                android:layout_weight="1"
+                android:inputType="numberDecimal" >
+            </EditText>
+        </LinearLayout>
+
+        <ImageView
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:src="@drawable/trenner_liste" />
+
+        <Button
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:onClick="saveProfile"
+            android:text="Save" />
+    </LinearLayout>
+
+</ScrollView>

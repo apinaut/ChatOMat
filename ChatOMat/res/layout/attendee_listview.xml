@@ -1,0 +1,23 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="40dip"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
+
+    <ImageView
+        android:id="@+id/attendeeImage"
+        android:layout_width="fill_parent"
+        android:layout_height="40dip"
+        android:adjustViewBounds="true"
+        android:background="@drawable/profilimg_bg"
+        android:scaleType="fitXY" />
+
+    <TextView
+        android:id="@+id/attendeeName"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:textColor="#333333"
+        android:textSize="8dip" />
+
+</LinearLayout>

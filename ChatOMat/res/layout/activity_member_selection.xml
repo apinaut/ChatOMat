@@ -1,0 +1,25 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent" >
+
+    <LinearLayout
+        android:id="@+id/headerLayout"
+        android:layout_width="match_parent"
+        android:layout_height="40dip"
+        android:background="@drawable/apinauts_header"
+        android:gravity="right"
+        android:onClick="goBack">
+    </LinearLayout>
+
+    <ListView
+        android:id="@+id/listViewAttendees"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:layout_below="@+id/headerLayout"
+        android:background="@drawable/bg_liste"
+        android:divider="@drawable/trenner_liste"
+        android:showDividers="middle" >
+    </ListView>
+
+</RelativeLayout>

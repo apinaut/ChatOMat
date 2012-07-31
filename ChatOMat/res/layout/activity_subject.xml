@@ -1,0 +1,76 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/bg_liste">
+
+    <LinearLayout
+        android:id="@+id/headerLayout"
+        android:layout_width="match_parent"
+        android:layout_height="40dip"
+        android:background="@drawable/conversation_subject_header"
+        android:gravity="right" 
+        android:onClick="goBack">
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/trenner_headbar" />
+
+        <ImageView
+            android:id="@+id/imageAttachment"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/klammer" 
+            android:onClick="addMedia"/>
+
+        <ImageView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/trenner_headbar" />
+
+        <ImageView
+            android:id="@+id/imagePlus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:src="@drawable/plus" 
+            android:onClick="addAttendee"/>
+    </LinearLayout>
+
+    <GridView
+        android:id="@+id/attendeesList"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/headerLayout"
+        android:columnWidth="44dp"
+        android:minHeight="55dip"
+        android:gravity="top"
+        android:numColumns="auto_fit"
+        android:stretchMode="columnWidth" >
+    </GridView>
+
+    <TextView
+        android:id="@+id/subjectTitle"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/attendeesList" 
+        android:textColor="#333333"/>
+    
+    <ListView
+        android:id="@+id/messageList"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/subjectTitle" 
+        android:layout_above="@+id/newMessageText"
+        android:divider="#FFFFFF">
+    </ListView>
+    
+    <EditText 
+        android:id="@+id/newMessageText"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:inputType="textAutoComplete"
+        android:imeActionId="0x00000004"
+        android:layout_alignParentBottom="true"/>
+
+</RelativeLayout>
