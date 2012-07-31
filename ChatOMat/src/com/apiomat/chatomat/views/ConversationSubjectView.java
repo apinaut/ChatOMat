@@ -157,7 +157,6 @@ public class ConversationSubjectView extends View
 	// TODO vermeiden
 	private class LoadConversationMessagessTask extends AsyncTask<Void, Void, List<MessageModel>>
 	{
-		@SuppressWarnings( "synthetic-access" )
 		@Override
 		protected List<MessageModel> doInBackground( Void... nix )
 		{
