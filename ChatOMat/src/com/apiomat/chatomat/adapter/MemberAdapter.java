@@ -1,13 +1,25 @@
-/* Copyright (c) 2007 - 2011 All Rights Reserved, http://www.match2blue.com/
+/* Copyright (c) 2012, Apinauten UG (haftungsbeschraenkt)
+ * All rights reserved.
  * 
- * This source is property of match2blue.com. You are not allowed to use or distribute this code without a contract
- * explicitly giving you these permissions. Usage of this code includes but is not limited to running it on a server or
- * copying parts from it.
+ * Redistribution and use in source and binary forms, with or without modification,
+ * are permitted provided that the following conditions are met:
  * 
- * match2blue software development GmbH, Leutragraben 1, 07743 Jena, Germany
+ * * Redistributions of source code must retain the above copyright notice, this
+ * list of conditions and the following disclaimer.
+ * * Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
  * 
- * 25.07.2012
- * andreasfey */
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+ * IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+ * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+ * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+ * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+ * OF THE POSSIBILITY OF SUCH DAMAGE. */
 package com.apiomat.chatomat.adapter;
 
 import android.app.Activity;
@@ -23,11 +35,16 @@ import com.apiomat.chatomat.views.MemberView;
 import com.apiomat.frontend.basics.MemberModel;
 
 /**
+ * Adapter for the list of possible members which may be attached to a conversation. The list is displayed each time the
+ * "plus" icon is pressed.
+ * 
  * @author andreasfey
  */
 public class MemberAdapter extends ArrayAdapter<MemberModel>
 {
 	/**
+	 * Constructor
+	 * 
 	 * @param context
 	 */
 	public MemberAdapter( Context context )

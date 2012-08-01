@@ -102,7 +102,7 @@ public class SubjectActivity extends Activity
 			setResult( RESULT_OK, intent );
 			MessageModel msg = this.messageAdapter.getItem( this.messageAdapter.getCount( ) - 1 );
 			intent.putExtra( MainActivity.EXTRA_LAST_MESSAGE, msg );
-			intent.putExtra( MainActivity.EXTRA_MEMBER, this.messageAdapter.getLastMemberForMessage( ) );
+			intent.putExtra( MainActivity.EXTRA_MEMBER, this.messageAdapter.getMemberFromLastMessage( ) );
 		}
 		else
 		{
