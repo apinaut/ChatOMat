@@ -2,30 +2,22 @@ package com.apiomat.chatomat;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.Gravity;
-import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.View;
-import android.view.View.OnClickListener;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
-import android.widget.Button;
-import android.widget.EditText;
 import android.widget.ListView;
-import android.widget.PopupWindow;
 
 import com.apiomat.chatomat.adapter.ConversationAdapter;
 import com.apiomat.frontend.Datastore;
@@ -46,8 +38,8 @@ public class MainActivity extends Activity
 	public static final String EXTRA_MEMBER = "member";
 	public static final String EXTRA_LAST_MESSAGE = "lastMessageText";
 
-	private static final int EXPECTED_SUBJECT_CODE = 1;
-	private static final int EXPECTED_PROFILE_CODE = 0;
+	static final int EXPECTED_SUBJECT_CODE = 1;
+	static final int EXPECTED_PROFILE_CODE = 0;
 
 	private ConversationAdapter adapter;
 	private Timer t;
@@ -70,7 +62,6 @@ public class MainActivity extends Activity
 			{
 				Intent intent = new Intent( parent.getContext( ), SubjectActivity.class );
 				intent.putExtra( EXTRA_CONVERSATION, ( Serializable ) list.getAdapter( ).getItem( position ) );
-				intent.putExtra( EXTRA_POSITION, position );
 				startActivityForResult( intent, EXPECTED_SUBJECT_CODE );
 			}
 		} );
@@ -101,46 +92,40 @@ public class MainActivity extends Activity
 	{
 		super.onResume( );
 
-		// if ( MemberCache.getMySelf( ) != null )
-		// {
-		// LoadConversationsTask task = new LoadConversationsTask( );
-		// try
-		// {
-		// task.execute( );
-		// this.adapter.clear( );
-		// for ( ConversationModel cm : task.get( ) )
-		// {
-		// this.adapter.add( cm );
-		// }
-		//
-		// }
-		// catch ( Exception e )
-		// {
-		// Log.e( "fillWithConversations", "Error loading conversations", e );
-		// }
-		// }
-
-		/* Start timer to fetch messages periodically */
 		this.t = new Timer( );
-		this.t.scheduleAtFixedRate( new RefreshConversationsTimer( ), 0, 10000 );
+		if ( MemberCache.getMySelf( ) != null )
+		{
+			/* Start timer to fetch messages periodically */
+			this.t.scheduleAtFixedRate( new RefreshConversationsTimer( ), 0, 10000 );
+		}
 	}
 
 	@Override
 	protected void onActivityResult( int requestCode, int resultCode, Intent intent )
 	{
 		super.onActivityResult( requestCode, resultCode, intent );
-		if ( requestCode == EXPECTED_PROFILE_CODE && resultCode == RESULT_OK )
+		if ( requestCode == EXPECTED_PROFILE_CODE )
 		{
-			Datastore.configure( MemberModel.baseURL, MemberModel.apiKey, MemberCache.getMySelf( ).getUserName( ),
-				MemberCache.getMySelf( ).getPassword( ) );
-			onResume( );
+			if ( resultCode == RESULT_OK )
+			{
+				Datastore.configure( MemberModel.baseURL, MemberModel.apiKey, MemberCache.getMySelf( ).getUserName( ),
+					MemberCache.getMySelf( ).getPassword( ) );
+				onResume( );
+			}
+			else
+			{
+				Datastore.configure( MemberModel.baseURL, MemberModel.apiKey, "", "" );
+				this.adapter.clear( );
+				AlertDialog dialog = new AlertDialog.Builder( this ).create( );
+				dialog.setMessage( "You have to create a profile using the apinaut button before going on!" );
+				dialog.show( );
+			}
 		}
 		else if ( requestCode == EXPECTED_SUBJECT_CODE && resultCode == RESULT_OK )
 		{
 			MemberModel sender = ( MemberModel ) intent.getExtras( ).getSerializable( EXTRA_MEMBER );
 			MessageModel msg = ( MessageModel ) intent.getExtras( ).getSerializable( EXTRA_LAST_MESSAGE );
-			int position = intent.getExtras( ).getInt( EXTRA_POSITION );
-			this.adapter.setLastMessage( position, msg, sender );
+			this.adapter.setLastMessage( msg, sender );
 		}
 	}
 
@@ -163,67 +148,14 @@ public class MainActivity extends Activity
 	}
 
 	/**
-	 * Adds a new conversation, asks for a subject and and opens it
+	 * Opens the list of members
 	 * 
 	 * @param view
 	 */
-	public void addConversation( View view )
+	public void addAttendee( @SuppressWarnings( "unused" ) View view )
 	{
-		LayoutInflater inflater = ( LayoutInflater ) this.getSystemService( Context.LAYOUT_INFLATER_SERVICE );
-		View popupView = inflater.inflate( R.layout.subject_popup, null, false );
-		final PopupWindow pw = new PopupWindow( popupView, 300, 260, true );
-		final EditText subject = ( EditText ) popupView.findViewById( R.id.subjectText );
-		final Button okButton = ( Button ) popupView.findViewById( R.id.subjectTextOK );
-
-		okButton.setOnClickListener( new OnClickListener( )
-		{
-			@SuppressWarnings( "synthetic-access" )
-			@Override
-			public void onClick( View v )
-			{
-				if ( subject.getText( ).length( ) == 0 )
-				{
-					AlertDialog alert = new AlertDialog.Builder( MainActivity.this ).create( );
-					alert.setCancelable( true );
-					alert.setTitle( "Subject must not be empty" );
-					alert.setMessage( "We need a subject to create a new conversation." );
-					alert.show( );
-					return;
-				}
-
-				pw.dismiss( );
-
-				AddConversationsTask task = new AddConversationsTask( );
-				task.execute( subject.getText( ).toString( ) );
-
-				try
-				{
-					ConversationModel conversation = task.get( );
-					if ( conversation != null )
-					{
-						MainActivity.this.adapter.add( conversation );
-						Intent intent = new Intent( MainActivity.this, SubjectActivity.class );
-						intent.putExtra( EXTRA_CONVERSATION, conversation );
-						intent.putExtra( EXTRA_POSITION, MainActivity.this.adapter.getCount( ) - 1 );
-						startActivity( intent );
-					}
-					else
-					{
-						AlertDialog alert = new AlertDialog.Builder( MainActivity.this ).create( );
-						alert.setCancelable( true );
-						alert.setTitle( "Error creating conversation" );
-						alert.setMessage( "Sorry, new conversation could not be created. Just try it again." );
-						alert.show( );
-						return;
-					}
-				}
-				catch ( Exception e )
-				{
-					Log.e( "MainActivity", "Error creating new conversation", e );
-				}
-			}
-		} );
-		pw.showAtLocation( view, Gravity.CENTER, 0, 0 );
+		Intent intent = new Intent( this, MemberSelectionActivity.class );
+		startActivity( intent );
 	}
 
 	private class LoadConversationsTask extends AsyncTask<Void, Void, List<ConversationModel>>
@@ -239,28 +171,6 @@ public class MainActivity extends Activity
 			{
 				Log.e( "LoadConversationsTask", "Error loading conversations", e );
 				return new ArrayList<ConversationModel>( );
-			}
-		}
-	}
-
-	private class AddConversationsTask extends AsyncTask<String, Void, ConversationModel>
-	{
-		@Override
-		protected ConversationModel doInBackground( String... subject )
-		{
-			try
-			{
-				ConversationModel cm = new ConversationModel( );
-				cm.setAttendeeUserNames( Arrays.asList( new String[ ] { MemberCache.getMyself( ) } ) );
-				cm.setSubject( subject[ 0 ] );
-				cm.save( );
-
-				return cm;
-			}
-			catch ( Exception e )
-			{
-				Log.e( "AddConversationsTask", "Error creating conversation", e );
-				return null;
 			}
 		}
 	}

@@ -80,7 +80,7 @@ public class MemberView extends View
 				addresses = gcd.getFromLocation( this.member.getLocLatitude( ), this.member.getLocLongitude( ), 1 );
 				if ( addresses.size( ) > 0 )
 				{
-					this.city = addresses.get( 0 ).getAddressLine( 0 );
+					this.city = addresses.get( 0 ).getLocality( );
 				}
 			}
 			catch ( Exception e )

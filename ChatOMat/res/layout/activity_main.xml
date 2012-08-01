@@ -32,7 +32,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:src="@drawable/plus" 
-            android:onClick="addConversation"/>
+            android:onClick="addAttendee"/>
     </LinearLayout>
 
     <ListView
@@ -42,7 +42,8 @@
         android:layout_below="@+id/headerLayout"
         android:background="@drawable/bg_liste"
         android:showDividers="middle" 
-        android:divider="@drawable/trenner_liste">
+        android:divider="@drawable/trenner_liste"
+        android:cacheColorHint="#00000000">
     </ListView>
 
 

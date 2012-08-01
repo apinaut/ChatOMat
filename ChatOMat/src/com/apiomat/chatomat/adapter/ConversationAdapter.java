@@ -51,7 +51,7 @@ public class ConversationAdapter extends ArrayAdapter<ConversationModel>
 		return row;
 	}
 
-	public void setLastMessage( int position, MessageModel lastMessage, MemberModel sender )
+	public void setLastMessage( MessageModel lastMessage, MemberModel sender )
 	{
 		LayoutInflater inflater = ( ( Activity ) this.getContext( ) ).getLayoutInflater( );
 		View row = inflater.inflate( R.layout.conversation_listview, this.lastParent, false );

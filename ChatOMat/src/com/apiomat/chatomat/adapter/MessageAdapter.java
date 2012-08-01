@@ -102,9 +102,9 @@ public class MessageAdapter extends ArrayAdapter<MessageModel>
 		return row;
 	}
 
-	public MemberModel getMemberForMessage( int position )
+	public MemberModel getLastMemberForMessage( )
 	{
-		final MessageModel currentMsg = getItem( position );
+		final MessageModel currentMsg = getItem( getCount( ) - 1 );
 		return this.memberOfMessageMap.get( currentMsg );
 	}
 

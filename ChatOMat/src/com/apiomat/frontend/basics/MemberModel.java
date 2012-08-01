@@ -40,7 +40,7 @@ public class MemberModel extends AbstractClientDataModel
 	// public static String apiKey = "848158150886472345";
 	public static String baseURL = "http://ec2-54-247-10-207.eu-west-1.compute.amazonaws.com/yambas/rest/apps/Chat";
 
-	// public static String baseURL = "http://192.168.100.38:8080/yambas/rest/apps/Chat";
+	// public static String baseURL = "http://192.168.6.8:8080/yambas/rest/apps/Chat";
 
 	/**
 	 * Default constructor. Needed for internal processing.

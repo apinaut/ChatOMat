@@ -5,7 +5,7 @@
     <string name="menu_settings">Settings</string>
     <string name="subjectpopup_text">Please enter a subject for the new conversation</string>
     <string name="ok">OK</string>
-    <string name="title_activity_profile">ProfileActivity</string>
+    <string name="cancel">Cancel</string>
     <string-array name="sex">
          <item>female</item>
         <item>male</item>

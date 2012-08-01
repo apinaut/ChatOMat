@@ -12,7 +12,7 @@
         android:gravity="right" 
         android:onClick="goBack">
 
-        <ImageView
+        <!-- ImageView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:src="@drawable/trenner_headbar" />
@@ -22,7 +22,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:src="@drawable/klammer" 
-            android:onClick="addMedia"/>
+            android:onClick="addMedia"/-->
 
         <ImageView
             android:layout_width="wrap_content"

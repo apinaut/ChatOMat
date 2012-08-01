@@ -52,6 +52,7 @@ public class ProfileActivity extends Activity
 
 		if ( this.member != null )
 		{
+			( ( EditText ) findViewById( R.id.profileUserName ) ).setText( this.member.getUserName( ) );
 			( ( EditText ) findViewById( R.id.profileFirstName ) ).setText( this.member.getFirstName( ) );
 			( ( EditText ) findViewById( R.id.profileLastName ) ).setText( this.member.getLastName( ) );
 			( ( EditText ) findViewById( R.id.profileProfession ) ).setText( this.member.getProfession( ) );
@@ -79,6 +80,7 @@ public class ProfileActivity extends Activity
 				Log.e( "MemberAdapter", "Error loading member image" );
 			}
 		}
+		( ( EditText ) findViewById( R.id.profileUserName ) ).setEnabled( true );
 	}
 
 	@Override
@@ -113,12 +115,26 @@ public class ProfileActivity extends Activity
 		}
 	}
 
-	@SuppressWarnings( "boxing" )
-	public void saveProfile( View view )
+	public void clearProfile( final View view )
+	{
+		this.member = null;
+		MemberCache.setMyself( null );
+		( ( EditText ) findViewById( R.id.profileUserName ) ).setText( "" );
+		( ( EditText ) findViewById( R.id.profileFirstName ) ).setText( "" );
+		( ( EditText ) findViewById( R.id.profilePassword ) ).setText( "" );
+		( ( EditText ) findViewById( R.id.profileLastName ) ).setText( "" );
+		( ( EditText ) findViewById( R.id.profileProfession ) ).setText( "" );
+		( ( EditText ) findViewById( R.id.profileCompany ) ).setText( "" );
+		( ( EditText ) findViewById( R.id.profileAge ) ).setText( "" );
+		( ( Spinner ) findViewById( R.id.profileSex ) ).setSelection( 0 );
+		( ( EditText ) findViewById( R.id.profileUserName ) ).setEnabled( true );
+	}
+
+	public void saveProfile( final View view )
 	{
 		AlertDialog alert = new AlertDialog.Builder( ProfileActivity.this ).create( );
 		alert.setCancelable( true );
-		alert.setTitle( "Field values missing" );
+		alert.setTitle( "Field values error" );
 		String errorMessage = "";
 
 		if ( ( ( EditText ) findViewById( R.id.profileFirstName ) ).getText( ).length( ) == 0 )
@@ -159,6 +175,7 @@ public class ProfileActivity extends Activity
 				this.member = new MemberModel( );
 			}
 
+			this.member.setUserName( ( ( EditText ) findViewById( R.id.profileUserName ) ).getText( ).toString( ) );
 			this.member.setFirstName( ( ( EditText ) findViewById( R.id.profileFirstName ) ).getText( ).toString( ) );
 			this.member.setLastName( ( ( EditText ) findViewById( R.id.profileLastName ) ).getText( ).toString( ) );
 			this.member.setCompany( ( ( EditText ) findViewById( R.id.profileCompany ) ).getText( ).toString( ) );
@@ -186,7 +203,13 @@ public class ProfileActivity extends Activity
 			try
 			{
 				String pw = this.member.getPassword( );
-				task.get( );
+				boolean ok = task.get( );
+				if ( !ok )
+				{
+					alert.setMessage( "Please try another username or use the correct password." );
+					alert.show( );
+					return;
+				}
 				this.member.setPassword( pw ); // is not returned from server
 
 				if ( this.newImagePath != null )
@@ -241,10 +264,10 @@ public class ProfileActivity extends Activity
 		startActivityForResult( i, ACTIVITY_SELECT_IMAGE );
 	}
 
-	private class CreateOrLoadMemberTask extends AsyncTask<Void, Void, Void>
+	private class CreateOrLoadMemberTask extends AsyncTask<Void, Void, Boolean>
 	{
 		@Override
-		protected Void doInBackground( Void... m )
+		protected Boolean doInBackground( Void... m )
 		{
 			try
 			{
@@ -258,23 +281,38 @@ public class ProfileActivity extends Activity
 					ProfileActivity.this.member.getUserName( ),
 					ProfileActivity.this.member.getPassword( ) );
 
-				ProfileActivity.this.member.loadMe( );
 				if ( ProfileActivity.this.member.getHref( ) == null )
 				{
-					ProfileActivity.this.member.save( );
+					/* try to load an existing user; then update it with the new values */
+					MemberModel tmpMember = new MemberModel( );
+					tmpMember.setUserName( ProfileActivity.this.member.getUserName( ) );
+					tmpMember.setPassword( ProfileActivity.this.member.getPassword( ) );
+					tmpMember.loadMe( );
+
+					tmpMember.setAge( ProfileActivity.this.member.getAge( ) );
+					tmpMember.setCompany( ProfileActivity.this.member.getCompany( ) );
+					tmpMember.setFirstName( ProfileActivity.this.member.getFirstName( ) );
+					tmpMember.setLastName( ProfileActivity.this.member.getLastName( ) );
+					tmpMember.setLocLatitude( ProfileActivity.this.member.getLocLatitude( ) );
+					tmpMember.setLocLongitude( ProfileActivity.this.member.getLocLongitude( ) );
+					tmpMember.setProfession( ProfileActivity.this.member.getProfession( ) );
+					tmpMember.setSex( ProfileActivity.this.member.getSex( ) );
+					ProfileActivity.this.member = tmpMember;
 				}
+				ProfileActivity.this.member.save( );
+
+				return ProfileActivity.this.member.getHref( ) != null;
 			}
 			catch ( Exception e )
 			{
 				Log.w( "ProfileActivity", "Error loading member", e );
 			}
-			return null;
+			return false;
 		}
 	}
 
 	private class SaveMemberImageTask extends AsyncTask<String, Void, Void>
 	{
-		@SuppressWarnings( "synthetic-access" )
 		@Override
 		protected Void doInBackground( String... m )
 		{
@@ -344,10 +382,19 @@ public class ProfileActivity extends Activity
 
 		SharedPreferences mPrefs = getSharedPreferences( MainActivity.EXTRA_MEMBER, MODE_PRIVATE );
 		SharedPreferences.Editor ed = mPrefs.edit( );
-		ed.putString( "userName", this.member.getUserName( ) );
-		if ( this.member.getPassword( ) != "" )
+
+		if ( this.member != null )
 		{
-			ed.putString( "password", this.member.getPassword( ) );
+			ed.putString( "userName", this.member.getUserName( ) );
+			if ( this.member.getPassword( ) != "" )
+			{
+				ed.putString( "password", this.member.getPassword( ) );
+			}
+		}
+		else
+		{
+			ed.remove( "userName" );
+			ed.remove( "password" );
 		}
 		ed.commit( );
 	}

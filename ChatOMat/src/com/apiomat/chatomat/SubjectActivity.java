@@ -30,7 +30,6 @@ public class SubjectActivity extends Activity
 	private MessageAdapter messageAdapter;
 	private AttendeeAdapter attendeeAdapter;
 	private Timer t;
-	private int position;
 
 	@Override
 	public void onCreate( Bundle savedInstanceState )
@@ -41,7 +40,6 @@ public class SubjectActivity extends Activity
 		Intent i = getIntent( );
 		this.conv =
 			( ConversationModel ) i.getExtras( ).getSerializable( MainActivity.EXTRA_CONVERSATION );
-		this.position = i.getExtras( ).getInt( MainActivity.EXTRA_POSITION );
 
 		/* Draw grid of attendees */
 		final GridView list = ( GridView ) findViewById( R.id.attendeesList );
@@ -94,18 +92,22 @@ public class SubjectActivity extends Activity
 	 * 
 	 * @param view
 	 */
-	public void goBack( View view )
+	public void goBack( @SuppressWarnings( "unused" ) View view )
 	{
+		/* called from Main screen */
 		Intent intent = new Intent( );
-		setResult( RESULT_OK, intent );
+
 		if ( this.messageAdapter.getCount( ) > 0 )
 		{
+			setResult( RESULT_OK, intent );
 			MessageModel msg = this.messageAdapter.getItem( this.messageAdapter.getCount( ) - 1 );
 			intent.putExtra( MainActivity.EXTRA_LAST_MESSAGE, msg );
-			intent.putExtra( MainActivity.EXTRA_MEMBER, this.messageAdapter.getMemberForMessage( this.position ) );
-			intent.putExtra( MainActivity.EXTRA_POSITION, this.position );
+			intent.putExtra( MainActivity.EXTRA_MEMBER, this.messageAdapter.getLastMemberForMessage( ) );
 		}
-
+		else
+		{
+			setResult( RESULT_CANCELED, intent );
+		}
 		finish( );
 	}
 
@@ -114,7 +116,7 @@ public class SubjectActivity extends Activity
 	 * 
 	 * @param view
 	 */
-	public void addAttendee( View view )
+	public void addAttendee( @SuppressWarnings( "unused" ) View view )
 	{
 		Intent intent = new Intent( this, MemberSelectionActivity.class );
 		intent.putExtra( MainActivity.EXTRA_CONVERSATION, this.conv );

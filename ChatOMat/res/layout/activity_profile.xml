@@ -87,6 +87,38 @@
                 android:inputType="textPersonName" >
             </EditText>
         </LinearLayout>
+        
+        <ImageView
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:src="@drawable/trenner_liste" />
+
+        <LinearLayout
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal" >
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="fill_parent"
+                android:layout_gravity="center_vertical"
+                android:gravity="center"
+                android:text="Username:"
+                android:textSize="@dimen/padding_large"  
+                android:textColor="#000000"
+                android:enabled="false" />
+
+            <EditText
+                android:id="@+id/profileUserName"
+                android:layout_width="0dip"
+                android:layout_height="fill_parent"
+                android:layout_marginTop="4dip"
+                android:layout_weight="1"
+                android:inputType="textPersonName" >
+            </EditText>
+        </LinearLayout>
+
+        
 
         <ImageView
             android:layout_width="fill_parent"
@@ -247,6 +279,12 @@
             android:layout_height="wrap_content"
             android:onClick="saveProfile"
             android:text="Save" />
+        
+        <Button
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content"
+            android:onClick="clearProfile"
+            android:text="Clear" />
     </LinearLayout>
 
 </ScrollView>
