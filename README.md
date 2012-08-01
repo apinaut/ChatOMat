@@ -25,6 +25,6 @@ questions or better solutions for the code, just get in contact
 
 * [Our newsgroup](https://groups.google.com/group/api-o-mat-newsletter/subscribe)
 * [Our website](http://apiomat.com)
-* [Twitter](#APIOMAT)
+* [Twitter #APIOMAT](http://twitter.com/apiomat)
 
 
