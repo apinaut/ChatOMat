@@ -1,85 +1,81 @@
-/* Copyright (c) 2012, Apinauten UG (haftungsbeschraenkt)
+/*
+ * Copyright (c) 2012, Apinauten UG (haftungsbeschraenkt)
  * All rights reserved.
  * 
- * Redistribution and use in source and binary forms, with or without modification,
+ * Redistribution and use in source and binary forms, with or without modification, 
  * are permitted provided that the following conditions are met:
- * 
- * * Redistributions of source code must retain the above copyright notice, this
- * list of conditions and the following disclaimer.
- * * Redistributions in binary form must reproduce the above copyright notice,
- * this list of conditions and the following disclaimer in the documentation
- * and/or other materials provided with the distribution.
- * 
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
- * IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+ *
+ *  * Redistributions of source code must retain the above copyright notice, this 
+ *    list of conditions and the following disclaimer.
+ *  * Redistributions in binary form must reproduce the above copyright notice, 
+ *    this list of conditions and the following disclaimer in the documentation 
+ *    and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
+ * IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
  * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
- * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
- * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF 
+ * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
+ * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
- * THIS FILE IS GENERATED AUTOMATICALLY. DON'T MODIFY IT. */
+ * THIS FILE IS GENERATED AUTOMATICALLY. DON'T MODIFY IT.
+ */
 package com.apiomat.frontend.basics;
 
-import java.util.Date;
+import java.util.*;
 
-import rpc.json.me.JSONArray;
+import com.apiomat.frontend.*;
+import com.apiomat.frontend.basics.*;
 
-import com.apiomat.frontend.AbstractClientDataModel;
-import com.apiomat.frontend.Datastore;
+import rpc.json.me.*;
 
 /**
- * Generated default class representing a user in your app
- */
+* Generated default class representing a user in your app 
+*/
 public class MemberModel extends AbstractClientDataModel
 {
 	public static String apiKey = "1911826875896020520";
-	// public static String apiKey = "848158150886472345";
 	public static String baseURL = "http://ec2-54-247-10-207.eu-west-1.compute.amazonaws.com/yambas/rest/apps/Chat";
 
-	// public static String baseURL = "http://192.168.6.8:8080/yambas/rest/apps/Chat";
-
 	/**
-	 * Default constructor. Needed for internal processing.
-	 */
-	public MemberModel( )
+	* Default constructor. Needed for internal processing.
+	*/
+	public MemberModel ( )
 	{
 		super( );
 	}
 
 	/**
-	 * Returns the simple name of this class
-	 */
-	@Override
+	* Returns the simple name of this class 
+	*/
 	public String getSimpleName( )
 	{
 		return "MemberModel";
 	}
 
 	/**
-	 * Returns the name of the module where this class belongs to
-	 */
-	@Override
+	* Returns the name of the module where this class belongs to
+	*/
 	public String getModuleName( )
 	{
 		return "Basics";
 	}
-
+	
 	/**
-	 * Returns the system to connect to
-	 */
-	@Override
+	* Returns the system to connect to
+	*/
 	public String getSystem( )
 	{
 		return "";
 	}
 
 	/**
-	 * Updates this class from server
-	 */
+	* Updates this class from server 
+	*/
 	public void loadMe( ) throws Exception
 	{
 		load( "models/me" );
@@ -87,18 +83,18 @@ public class MemberModel extends AbstractClientDataModel
 
 	public double getLocLatitude( )
 	{
-		final JSONArray loc = this.data.optJSONArray( "loc" );
-		final Object raw = loc.get( 0 );
+		 final JSONArray loc = this.data.optJSONArray( "loc" );
+         final Object raw = loc.get( 0 );
 
-		return convertNumberToDouble( raw );
+         return convertNumberToDouble( raw );
 	}
-
+	
 	public double getLocLongitude( )
 	{
-		final JSONArray loc = this.data.optJSONArray( "loc" );
-		final Object raw = loc.get( 1 );
+		 final JSONArray loc = this.data.optJSONArray( "loc" );
+         final Object raw = loc.get( 1 );
 
-		return convertNumberToDouble( raw );
+         return convertNumberToDouble( raw );
 	}
 
 	public void setLocLatitude( double latitude )
@@ -110,7 +106,7 @@ public class MemberModel extends AbstractClientDataModel
 
 		this.data.getJSONArray( "loc" ).put( 0, latitude );
 	}
-
+	
 	public void setLocLongitude( double longitude )
 	{
 		if ( this.data.has( "loc" ) == false )
@@ -120,40 +116,38 @@ public class MemberModel extends AbstractClientDataModel
 
 		this.data.getJSONArray( "loc" ).put( 1, longitude );
 	}
-
-	public Integer getAge( )
+	
+	public Integer getAge()
 	{
-		if ( this.data.optJSONObject( "dynamicAttributes" ).isNull( "age" ) )
+		if(this.data.optJSONObject( "dynamicAttributes" ).isNull( "age" ))
 		{
 			return null;
 		}
-		return ( Integer ) this.data.optJSONObject( "dynamicAttributes" ).get( "age" );
+		return (Integer)this.data.optJSONObject( "dynamicAttributes" ).get( "age" );
 	}
 
 	public void setAge( Integer arg )
 	{
 		Integer age = arg;
-		this.data.optJSONObject( "dynamicAttributes" ).put( "age", age );
+		this.data.optJSONObject( "dynamicAttributes" ).put( "age",  age );
 	}
-
-	public String getCompany( )
+	public String getCompany()
 	{
-		if ( this.data.optJSONObject( "dynamicAttributes" ).isNull( "company" ) )
+		if(this.data.optJSONObject( "dynamicAttributes" ).isNull( "company" ))
 		{
 			return null;
 		}
-		return ( String ) this.data.optJSONObject( "dynamicAttributes" ).get( "company" );
+		return (String)this.data.optJSONObject( "dynamicAttributes" ).get( "company" );
 	}
 
 	public void setCompany( String arg )
 	{
 		String company = arg;
-		this.data.optJSONObject( "dynamicAttributes" ).put( "company", company );
+		this.data.optJSONObject( "dynamicAttributes" ).put( "company",  company );
 	}
-
-	public String getUserName( )
+	public String getUserName()
 	{
-		return this.data.optString( "userName" );
+ 		return this.data.optString( "userName" );
 	}
 
 	public void setUserName( String arg )
@@ -161,10 +155,9 @@ public class MemberModel extends AbstractClientDataModel
 		String userName = arg;
 		this.data.put( "userName", userName );
 	}
-
-	public String getPassword( )
+	public String getPassword()
 	{
-		return this.data.optString( "password" );
+ 		return this.data.optString( "password" );
 	}
 
 	public void setPassword( String arg )
@@ -172,10 +165,9 @@ public class MemberModel extends AbstractClientDataModel
 		String password = arg;
 		this.data.put( "password", password );
 	}
-
-	public String getLastName( )
+	public String getLastName()
 	{
-		return this.data.optString( "lastName" );
+ 		return this.data.optString( "lastName" );
 	}
 
 	public void setLastName( String arg )
@@ -183,59 +175,55 @@ public class MemberModel extends AbstractClientDataModel
 		String lastName = arg;
 		this.data.put( "lastName", lastName );
 	}
-
-	public String getImageURL( )
+	public String getImageURL()
 	{
-		if ( this.data.optJSONObject( "dynamicAttributes" ).isNull( "imageURL" ) )
+		if(this.data.optJSONObject( "dynamicAttributes" ).isNull( "imageURL" ))
 		{
 			return null;
 		}
-		return ( String ) this.data.optJSONObject( "dynamicAttributes" ).get( "imageURL" ) + ".img?apiKey=" + apiKey;
+		return (String)this.data.optJSONObject( "dynamicAttributes" ).get( "imageURL" ) + ".img?apiKey=" + apiKey;
 	}
-
-	public String postImage( byte[ ] data ) throws Exception
+	
+	public String postImage( byte[] data ) throws Exception
 	{
 		String href = Datastore.getInstance( ).postStaticDataOnServer( data, true );
-		this.data.optJSONObject( "dynamicAttributes" ).put( "imageURL", href );
-		this.save( );
+		this.data.optJSONObject( "dynamicAttributes" ).put( "imageURL",  href );
+		this.save();
 		return href;
 	}
-
-	public boolean deleteImage( ) throws Exception
+	
+	public boolean deleteImage() throws Exception
 	{
-		return Datastore.getInstance( ).deleteOnServer( getImageURL( ) );
+		return Datastore.getInstance( ).deleteOnServer( getImageURL());
 	}
-
-	public String getProfession( )
+	public String getProfession()
 	{
-		if ( this.data.optJSONObject( "dynamicAttributes" ).isNull( "profession" ) )
+		if(this.data.optJSONObject( "dynamicAttributes" ).isNull( "profession" ))
 		{
 			return null;
 		}
-		return ( String ) this.data.optJSONObject( "dynamicAttributes" ).get( "profession" );
+		return (String)this.data.optJSONObject( "dynamicAttributes" ).get( "profession" );
 	}
 
 	public void setProfession( String arg )
 	{
 		String profession = arg;
-		this.data.optJSONObject( "dynamicAttributes" ).put( "profession", profession );
+		this.data.optJSONObject( "dynamicAttributes" ).put( "profession",  profession );
 	}
-
-	public String getSex( )
+	public String getSex()
 	{
-		if ( this.data.optJSONObject( "dynamicAttributes" ).isNull( "sex" ) )
+		if(this.data.optJSONObject( "dynamicAttributes" ).isNull( "sex" ))
 		{
 			return null;
 		}
-		return ( String ) this.data.optJSONObject( "dynamicAttributes" ).get( "sex" );
+		return (String)this.data.optJSONObject( "dynamicAttributes" ).get( "sex" );
 	}
 
 	public void setSex( String arg )
 	{
 		String sex = arg;
-		this.data.optJSONObject( "dynamicAttributes" ).put( "sex", sex );
+		this.data.optJSONObject( "dynamicAttributes" ).put( "sex",  sex );
 	}
-
 	public Date getDateOfBirth( )
 	{
 		return new Date( this.data.getLong( "dateOfBirth" ) );
@@ -245,10 +233,10 @@ public class MemberModel extends AbstractClientDataModel
 	{
 		this.data.putOpt( "dateOfBirth", dateOfBirth.getTime( ) );
 	}
-
-	public String getFirstName( )
+	
+	public String getFirstName()
 	{
-		return this.data.optString( "firstName" );
+ 		return this.data.optString( "firstName" );
 	}
 
 	public void setFirstName( String arg )

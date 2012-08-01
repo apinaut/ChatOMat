@@ -1,3 +1,25 @@
+/* Copyright (c) 2012, Apinauten UG (haftungsbeschraenkt)
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without modification,
+ * are permitted provided that the following conditions are met:
+ * 
+ * * Redistributions of source code must retain the above copyright notice, this
+ * list of conditions and the following disclaimer.
+ * * Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+ * IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+ * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+ * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+ * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+ * OF THE POSSIBILITY OF SUCH DAMAGE. */
 package com.apiomat.chatomat;
 
 import java.io.Serializable;
@@ -8,12 +30,14 @@ import java.util.TimerTask;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
@@ -52,17 +76,26 @@ public class MainActivity extends Activity
 
 		this.adapter = new ConversationAdapter( this );
 
-		final ListView list = ( ListView ) findViewById( R.id.conversationsList );
-		list.setAdapter( this.adapter );
-		list.setOnItemClickListener( new OnItemClickListener( )
+		final ListView convList = ( ListView ) findViewById( R.id.conversationsList );
+		convList.setAdapter( this.adapter );
+		final ActivitySwipeDetector activitySwipeDetector = new ActivitySwipeDetector( );
+		convList.setOnTouchListener( activitySwipeDetector );
+		convList.setOnItemClickListener( new OnItemClickListener( )
 		{
 			@Override
 			public void onItemClick( AdapterView<?> parent, View view,
 				int position, long id )
 			{
-				Intent intent = new Intent( parent.getContext( ), SubjectActivity.class );
-				intent.putExtra( EXTRA_CONVERSATION, ( Serializable ) list.getAdapter( ).getItem( position ) );
-				startActivityForResult( intent, EXPECTED_SUBJECT_CODE );
+				if ( activitySwipeDetector.isSwipeDetected( ) )
+				{
+					deleteItem( MainActivity.this.adapter.getItem( position ) );
+				}
+				else
+				{
+					Intent intent = new Intent( parent.getContext( ), SubjectActivity.class );
+					intent.putExtra( EXTRA_CONVERSATION, ( Serializable ) convList.getAdapter( ).getItem( position ) );
+					startActivityForResult( intent, EXPECTED_SUBJECT_CODE );
+				}
 			}
 		} );
 
@@ -76,7 +109,8 @@ public class MainActivity extends Activity
 		}
 		else
 		{
-			MemberCache.loadMyselfToCache( mPrefs.getString( "userName", "" ), mPrefs.getString( "password", "" ) );
+			MemberCache.loadMemberToCache( mPrefs.getString( "userName", "" ), mPrefs.getString( "password", "" ) );
+			MemberCache.setMyself( mPrefs.getString( "userName", "" ) );
 		}
 	}
 
@@ -112,7 +146,7 @@ public class MainActivity extends Activity
 					MemberCache.getMySelf( ).getPassword( ) );
 				onResume( );
 			}
-			else
+			else if ( MemberCache.getMyself( ) == null )
 			{
 				Datastore.configure( MemberModel.baseURL, MemberModel.apiKey, "", "" );
 				this.adapter.clear( );
@@ -123,9 +157,8 @@ public class MainActivity extends Activity
 		}
 		else if ( requestCode == EXPECTED_SUBJECT_CODE && resultCode == RESULT_OK )
 		{
-			MemberModel sender = ( MemberModel ) intent.getExtras( ).getSerializable( EXTRA_MEMBER );
 			MessageModel msg = ( MessageModel ) intent.getExtras( ).getSerializable( EXTRA_LAST_MESSAGE );
-			this.adapter.setLastMessage( msg, sender );
+			this.adapter.setLastMessage( msg );
 		}
 	}
 
@@ -156,6 +189,42 @@ public class MainActivity extends Activity
 	{
 		Intent intent = new Intent( this, MemberSelectionActivity.class );
 		startActivity( intent );
+	}
+
+	private void deleteItem( final ConversationModel model )
+	{
+		AlertDialog.Builder builder = new AlertDialog.Builder( MainActivity.this );
+		builder.setMessage( "Are you sure to delete this conversation?" );
+		builder.setPositiveButton( "Yes", new DialogInterface.OnClickListener( )
+		{
+			@Override
+			public void onClick( DialogInterface dialog, int id )
+			{
+				DeleteConversationTask task = new DeleteConversationTask( );
+				task.execute( model );
+				try
+				{
+					if ( task.get( ) )
+					{
+						MainActivity.this.adapter.remove( model );
+					}
+				}
+				catch ( Exception e )
+				{
+					Log.e( "MainActivity", "Error deleting conversation", e );
+				}
+			}
+		} );
+		builder.setNegativeButton( "No", new DialogInterface.OnClickListener( )
+		{
+			@Override
+			public void onClick( DialogInterface paramDialogInterface, int paramInt )
+			{
+				paramDialogInterface.cancel( );
+			}
+		} );
+		AlertDialog alert = builder.create( );
+		alert.show( );
 	}
 
 	private class LoadConversationsTask extends AsyncTask<Void, Void, List<ConversationModel>>
@@ -213,5 +282,61 @@ public class MainActivity extends Activity
 				Log.e( "RefreshConversationsTimer", "Error refreshing conversations", e );
 			}
 		}
+	}
+
+	class ActivitySwipeDetector implements View.OnTouchListener
+	{
+
+		static final String logTag = "ActivitySwipeDetector";
+		static final int MIN_DISTANCE = 100;
+		private float downX, upX;
+		private boolean swipeDetected = false;
+
+		public final boolean isSwipeDetected( )
+		{
+			return this.swipeDetected;
+		}
+
+		@Override
+		public boolean onTouch( View v, MotionEvent event )
+		{
+			switch ( event.getAction( ) )
+			{
+			case MotionEvent.ACTION_DOWN:
+			{
+				this.downX = event.getX( );
+				return true;
+			}
+			case MotionEvent.ACTION_UP:
+			{
+				this.upX = event.getX( );
+				float deltaX = this.downX - this.upX;
+
+				this.swipeDetected = Math.abs( deltaX ) > MIN_DISTANCE && ( deltaX < 0 || deltaX > 0 );
+				return false;
+			}
+			default:
+				return false;
+			}
+		}
+	}
+
+	private class DeleteConversationTask extends AsyncTask<ConversationModel, Void, Boolean>
+	{
+		@Override
+		protected Boolean doInBackground( ConversationModel... conversation )
+		{
+			try
+			{
+				conversation[ 0 ].delete( );
+				return true;
+			}
+			catch ( Exception e )
+			{
+				Log.e( "DeleteConversationTask", "Error deleting conversation", e );
+			}
+			return false;
+		}
+
 	}
 }

@@ -1,3 +1,25 @@
+/* Copyright (c) 2012, Apinauten UG (haftungsbeschraenkt)
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without modification,
+ * are permitted provided that the following conditions are met:
+ * 
+ * * Redistributions of source code must retain the above copyright notice, this
+ * list of conditions and the following disclaimer.
+ * * Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+ * IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+ * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+ * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+ * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+ * OF THE POSSIBILITY OF SUCH DAMAGE. */
 package com.apiomat.chatomat;
 
 import java.io.File;
@@ -30,6 +52,15 @@ import android.widget.Spinner;
 import com.apiomat.frontend.Datastore;
 import com.apiomat.frontend.basics.MemberModel;
 
+/**
+ * Activity where the user can modify his profile. This activity is automatically started at the beginning if no member
+ * was logged in/saved yet.
+ * 
+ * The username and password of this member is then saved in the {@link #onPause()} method and queried each app start
+ * later on.
+ * 
+ * @author andreasfey
+ */
 public class ProfileActivity extends Activity
 {
 	private static final int ACTIVITY_SELECT_IMAGE = 2;
@@ -115,7 +146,12 @@ public class ProfileActivity extends Activity
 		}
 	}
 
-	public void clearProfile( final View view )
+	/**
+	 * Clears all fields and sets the current member to null
+	 * 
+	 * @param view
+	 */
+	public void clearProfile( @SuppressWarnings( "unused" ) final View view )
 	{
 		this.member = null;
 		MemberCache.setMyself( null );
@@ -130,6 +166,12 @@ public class ProfileActivity extends Activity
 		( ( EditText ) findViewById( R.id.profileUserName ) ).setEnabled( true );
 	}
 
+	/**
+	 * Saves the profile; if member exists already, the values are only updated
+	 * 
+	 * @param view
+	 */
+	@SuppressWarnings( { "boxing" } )
 	public void saveProfile( final View view )
 	{
 		AlertDialog alert = new AlertDialog.Builder( ProfileActivity.this ).create( );
@@ -231,6 +273,12 @@ public class ProfileActivity extends Activity
 		}
 	}
 
+	/**
+	 * Goes back to the {@link MainActivity}
+	 * 
+	 * @param view
+	 */
+	@SuppressWarnings( "unused" )
 	public void goBack( View view )
 	{
 		if ( this.member == null )
@@ -257,7 +305,13 @@ public class ProfileActivity extends Activity
 		}
 	}
 
-	public void changeProfileImage( @SuppressWarnings( "unused" ) View view )
+	/**
+	 * Opens the gallery to let the user select a profile image. The result is handled in
+	 * {@link #onActivityResult(int, int, Intent)}
+	 * 
+	 * @param view
+	 */
+	public void changeProfileImage( @SuppressWarnings( "unused" ) final View view )
 	{
 		Intent i = new Intent( Intent.ACTION_PICK,
 			android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI );
@@ -322,6 +376,9 @@ public class ProfileActivity extends Activity
 				byte[ ] imageBytes = readFile( new File( filePath ) );
 
 				ProfileActivity.this.member.postImage( imageBytes );
+
+				Bitmap bmp = BitmapFactory.decodeByteArray( imageBytes, 0, imageBytes.length );
+				MemberCache.putImage( ProfileActivity.this.member.getUserName( ), bmp );
 			}
 			catch ( Exception e )
 			{

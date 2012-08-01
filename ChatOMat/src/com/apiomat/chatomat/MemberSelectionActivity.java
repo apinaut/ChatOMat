@@ -1,4 +1,25 @@
-package com.apiomat.chatomat;
+/* Copyright (c) 2012, Apinauten UG (haftungsbeschraenkt)
+ * All rights reserved.
+ * 
+ * Redistribution and use in source and binary forms, with or without modification,
+ * are permitted provided that the following conditions are met:
+ * 
+ * * Redistributions of source code must retain the above copyright notice, this
+ * list of conditions and the following disclaimer.
+ * * Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+ * IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+ * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+ * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+ * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+ * OF THE POSSIBILITY OF SUCH DAMAGE. */package com.apiomat.chatomat;
 
 import java.util.Arrays;
 import java.util.List;
@@ -28,6 +49,14 @@ import com.apiomat.frontend.basics.MemberModel;
 import com.apiomat.frontend.chat.ConversationModel;
 import com.apiomat.frontend.chat.MessageModel;
 
+/**
+ * Acitivity which shows a list of members; the user can select one to add him to a new or existing conversation. <br/>
+ * This activity may be called by pressing the plus button either from the {@link MainActivity}, which means member for
+ * a <b>new</b> conversation is selected, or from the {@link SubjectActivity}, which means a member will be added to an
+ * existing conversation.
+ * 
+ * @author andreasfey
+ */
 public class MemberSelectionActivity extends Activity
 {
 	private ConversationModel conv;
@@ -214,6 +243,11 @@ public class MemberSelectionActivity extends Activity
 		}
 	}
 
+	/**
+	 * Load all existing members from server for this app, excluding all current attendees
+	 * 
+	 * @author andreasfey
+	 */
 	private class LoadMembersTask extends AsyncTask<Void, Void, List<MemberModel>>
 	{
 		@Override

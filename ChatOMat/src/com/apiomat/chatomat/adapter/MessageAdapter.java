@@ -24,13 +24,9 @@ package com.apiomat.chatomat.adapter;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.Map;
 
 import android.app.Activity;
 import android.content.Context;
-import android.os.AsyncTask;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -38,6 +34,7 @@ import android.widget.ArrayAdapter;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
+import com.apiomat.chatomat.MemberCache;
 import com.apiomat.chatomat.R;
 import com.apiomat.frontend.basics.MemberModel;
 import com.apiomat.frontend.chat.MessageModel;
@@ -51,7 +48,6 @@ public class MessageAdapter extends ArrayAdapter<MessageModel>
 {
 	private final SimpleDateFormat sdf = new SimpleDateFormat( "dd.MM.yyyy" );
 	private final SimpleDateFormat stf = new SimpleDateFormat( "HH:mm" );
-	private final Map<MessageModel, MemberModel> memberOfMessageMap = new HashMap<MessageModel, MemberModel>( );
 	private final String userName;
 
 	/**
@@ -75,13 +71,11 @@ public class MessageAdapter extends ArrayAdapter<MessageModel>
 
 		if ( currentMsg != null )
 		{
-			final MemberModel sender = loadSender( currentMsg );
-
 			final TextView messageDate = ( TextView ) row.findViewById( R.id.messageDate );
 			messageDate.setText( getDisplayableDate( currentMsg.getCreatedAt( ) ) );
 
 			final TextView messageSender = ( TextView ) row.findViewById( R.id.messageSender );
-			messageSender.setText( sender.getUserName( ) );
+			messageSender.setText( currentMsg.getSenderUserName( ) );
 
 			final TextView messageText = ( TextView ) row.findViewById( R.id.messageText );
 			messageText.setText( currentMsg.getText( ) + "\n" + this.stf.format( currentMsg.getCreatedAt( ) ) );
@@ -100,7 +94,7 @@ public class MessageAdapter extends ArrayAdapter<MessageModel>
 				params.setMargins( 0, 8, 0, 0 );
 			}
 
-			if ( sender.getUserName( ).equals( this.userName ) )
+			if ( currentMsg.getSenderUserName( ).equals( this.userName ) )
 			{
 				message.setBackgroundResource( R.drawable.baloon_left9p );
 				message.setPadding( 30, 10, 0, 0 );
@@ -125,7 +119,7 @@ public class MessageAdapter extends ArrayAdapter<MessageModel>
 	public MemberModel getMemberFromLastMessage( )
 	{
 		final MessageModel currentMsg = getItem( getCount( ) - 1 );
-		return this.memberOfMessageMap.get( currentMsg );
+		return MemberCache.getMember( currentMsg.getSenderUserName( ) );
 	}
 
 	private String getDisplayableDate( Date d )
@@ -135,41 +129,5 @@ public class MessageAdapter extends ArrayAdapter<MessageModel>
 			return "Today";
 		}
 		return this.sdf.format( d );
-	}
-
-	private MemberModel loadSender( MessageModel message )
-	{
-		if ( !this.memberOfMessageMap.containsKey( message ) )
-		{
-			try
-			{
-				LoadMemberTask task = new LoadMemberTask( );
-				task.execute( message );
-				this.memberOfMessageMap.put( message, task.get( ) );
-			}
-			catch ( Exception e )
-			{
-				Log.e( "MessageAdapter", "Error loading member", e );
-			}
-		}
-		return this.memberOfMessageMap.get( message );
-	}
-
-	// TODO vermeiden
-	private class LoadMemberTask extends AsyncTask<MessageModel, Void, MemberModel>
-	{
-		@Override
-		protected MemberModel doInBackground( MessageModel... message )
-		{
-			try
-			{
-				return message[ 0 ].loadSender( );
-			}
-			catch ( Exception e )
-			{
-				Log.e( "MessageAdapter", "Error loading member", e );
-				return null;
-			}
-		}
 	}
 }

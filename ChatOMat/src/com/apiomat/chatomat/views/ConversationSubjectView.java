@@ -1,19 +1,32 @@
-/* Copyright (c) 2007 - 2011 All Rights Reserved, http://www.match2blue.com/
+/* Copyright (c) 2012, Apinauten UG (haftungsbeschraenkt)
+ * All rights reserved.
  * 
- * This source is property of match2blue.com. You are not allowed to use or distribute this code without a contract
- * explicitly giving you these permissions. Usage of this code includes but is not limited to running it on a server or
- * copying parts from it.
+ * Redistribution and use in source and binary forms, with or without modification,
+ * are permitted provided that the following conditions are met:
  * 
- * match2blue software development GmbH, Leutragraben 1, 07743 Jena, Germany
+ * * Redistributions of source code must retain the above copyright notice, this
+ * list of conditions and the following disclaimer.
+ * * Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
  * 
- * 24.07.2012
- * andreasfey */
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+ * IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+ * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+ * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+ * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
+ * OF THE POSSIBILITY OF SUCH DAMAGE. */
 package com.apiomat.chatomat.views;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.List;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
@@ -30,13 +43,15 @@ import android.view.View;
 
 import com.apiomat.chatomat.MemberCache;
 import com.apiomat.chatomat.R;
-import com.apiomat.frontend.basics.MemberModel;
 import com.apiomat.frontend.chat.ConversationModel;
 import com.apiomat.frontend.chat.MessageModel;
 
 /**
+ * View for displaying a Conversation in the main activity.
+ * 
  * @author andreasfey
  */
+@SuppressLint( "DrawAllocation" )
 public class ConversationSubjectView extends View
 {
 	private ConversationModel conversation;
@@ -44,27 +59,49 @@ public class ConversationSubjectView extends View
 	private static final int HEIGHT = 80;
 	private static final int BORDER = 10;
 
-	private MemberModel lastSender;
 	private MessageModel lastMessage;
 
+	/**
+	 * Constructor
+	 * 
+	 * @param context
+	 * @param attrs
+	 * @param defStyle
+	 */
 	public ConversationSubjectView( Context context, AttributeSet attrs, int defStyle )
 	{
 		super( context, attrs, defStyle );
 		setMinimumHeight( HEIGHT );
 	}
 
+	/**
+	 * Constructor
+	 * 
+	 * @param context
+	 * @param attrs
+	 */
 	public ConversationSubjectView( Context context, AttributeSet attrs )
 	{
 		super( context, attrs );
 		setMinimumHeight( HEIGHT );
 	}
 
+	/**
+	 * Constructor
+	 * 
+	 * @param context
+	 */
 	public ConversationSubjectView( Context context )
 	{
 		super( context );
 		setMinimumHeight( HEIGHT );
 	}
 
+	/**
+	 * Set the conversation object to show
+	 * 
+	 * @param conversation
+	 */
 	public final void setConversation( ConversationModel conversation )
 	{
 		this.conversation = conversation;
@@ -77,9 +114,6 @@ public class ConversationSubjectView extends View
 			if ( mms != null && mms.size( ) > 0 )
 			{
 				this.lastMessage = mms.get( mms.size( ) - 1 );
-				LoadSenderTask task2 = new LoadSenderTask( );
-				task2.execute( this.lastMessage );
-				this.lastSender = task2.get( );
 			}
 		}
 		catch ( Exception e )
@@ -89,11 +123,12 @@ public class ConversationSubjectView extends View
 		}
 	}
 
-	public final void setLastSender( MemberModel lastSender )
-	{
-		this.lastSender = lastSender;
-	}
-
+	/**
+	 * Helper method to update the last message if something on the conversation changed; this helps avoiding to load
+	 * all messages again to determine these value
+	 * 
+	 * @param lastMessage
+	 */
 	public final void setLastMessage( MessageModel lastMessage )
 	{
 		this.lastMessage = lastMessage;
@@ -132,43 +167,24 @@ public class ConversationSubjectView extends View
 				paint.setAntiAlias( true );
 				paint.setTypeface( Typeface.DEFAULT );
 				paint.setTextSize( 24 );
-				String text =
-					( this.lastSender != null ? this.lastSender.getUserName( ) + ": " : "" ) +
-						this.lastMessage.getText( );
+				String text = this.lastMessage.getSenderUserName( ) + this.lastMessage.getText( );
 				if ( text.length( ) > 50 )// TODO berechnen, nicht schaetzen
 				{
 					text = text.substring( 0, 50 );
 				}
 				canvas.drawText( text, HEIGHT + 20, HEIGHT - BORDER, paint );
-			}
 
-			/* sender image */
-			Resources res = getResources( );
-			BitmapDrawable drawable = ( BitmapDrawable ) res.getDrawable( R.drawable.profilimg_default );
-			if ( this.lastSender != null && MemberCache.containsImage( this.lastSender.getUserName( ) ) )
-			{
-				Bitmap bm = MemberCache.getImage( this.lastSender.getUserName( ) );
-				drawable = new BitmapDrawable( res, bm );
-			}
+				/* sender image */
+				Resources res = getResources( );
+				BitmapDrawable drawable = ( BitmapDrawable ) res.getDrawable( R.drawable.profilimg_default );
+				if ( MemberCache.containsImage( this.lastMessage.getSenderUserName( ) ) )
+				{
+					Bitmap bm = MemberCache.getImage( this.lastMessage.getSenderUserName( ) );
+					drawable = new BitmapDrawable( res, bm );
+				}
 
-			drawable.setBounds( BORDER, BORDER, HEIGHT - BORDER, HEIGHT - BORDER );
-			drawable.draw( canvas );
-		}
-	}
-
-	private class LoadSenderTask extends AsyncTask<MessageModel, Void, MemberModel>
-	{
-		@Override
-		protected MemberModel doInBackground( MessageModel... msg )
-		{
-			try
-			{
-				return msg[ 0 ].loadSender( );
-			}
-			catch ( Exception e )
-			{
-				Log.e( "LoadConversationsTask", "Error loading member", e );
-				return null;
+				drawable.setBounds( BORDER, BORDER, HEIGHT - BORDER, HEIGHT - BORDER );
+				drawable.draw( canvas );
 			}
 		}
 	}

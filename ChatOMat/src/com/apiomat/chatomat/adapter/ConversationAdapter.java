@@ -31,7 +31,6 @@ import android.widget.ArrayAdapter;
 
 import com.apiomat.chatomat.R;
 import com.apiomat.chatomat.views.ConversationSubjectView;
-import com.apiomat.frontend.basics.MemberModel;
 import com.apiomat.frontend.chat.ConversationModel;
 import com.apiomat.frontend.chat.MessageModel;
 
@@ -71,16 +70,14 @@ public class ConversationAdapter extends ArrayAdapter<ConversationModel>
 	 * {@link ConversationSubjectView}
 	 * 
 	 * @param lastMessage
-	 * @param sender
 	 */
-	public void setLastMessage( MessageModel lastMessage, MemberModel sender )
+	public void setLastMessage( MessageModel lastMessage )
 	{
 		LayoutInflater inflater = ( ( Activity ) this.getContext( ) ).getLayoutInflater( );
 		View row = inflater.inflate( R.layout.conversation_listview, this.lastParent, false );
 
 		ConversationSubjectView l = ( ConversationSubjectView ) row.findViewById( R.id.csView );
 		l.setLastMessage( lastMessage );
-		l.setLastSender( sender );
 	}
 
 }
