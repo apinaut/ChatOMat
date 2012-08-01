@@ -62,7 +62,8 @@
         android:layout_height="wrap_content"
         android:layout_below="@id/subjectTitle" 
         android:layout_above="@+id/newMessageText"
-        android:divider="#FFFFFF">
+        android:divider="#FFFFFF"
+        android:cacheColorHint="#00000000">
     </ListView>
     
     <EditText 

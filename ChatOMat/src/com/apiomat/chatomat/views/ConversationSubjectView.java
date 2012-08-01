@@ -167,7 +167,7 @@ public class ConversationSubjectView extends View
 				paint.setAntiAlias( true );
 				paint.setTypeface( Typeface.DEFAULT );
 				paint.setTextSize( 24 );
-				String text = this.lastMessage.getSenderUserName( ) + this.lastMessage.getText( );
+				String text = this.lastMessage.getSenderUserName( ) + ":" + this.lastMessage.getText( );
 				if ( text.length( ) > 50 )// TODO berechnen, nicht schaetzen
 				{
 					text = text.substring( 0, 50 );

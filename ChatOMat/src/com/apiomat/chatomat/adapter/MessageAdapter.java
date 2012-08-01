@@ -71,14 +71,15 @@ public class MessageAdapter extends ArrayAdapter<MessageModel>
 
 		if ( currentMsg != null )
 		{
+			Date createdAt = currentMsg.getHref( ) != null ? currentMsg.getCreatedAt( ) : new Date( );
 			final TextView messageDate = ( TextView ) row.findViewById( R.id.messageDate );
-			messageDate.setText( getDisplayableDate( currentMsg.getCreatedAt( ) ) );
+			messageDate.setText( getDisplayableDate( createdAt ) );
 
 			final TextView messageSender = ( TextView ) row.findViewById( R.id.messageSender );
 			messageSender.setText( currentMsg.getSenderUserName( ) );
 
 			final TextView messageText = ( TextView ) row.findViewById( R.id.messageText );
-			messageText.setText( currentMsg.getText( ) + "\n" + this.stf.format( currentMsg.getCreatedAt( ) ) );
+			messageText.setText( currentMsg.getText( ) + "\n" + this.stf.format( createdAt ) );
 
 			final RelativeLayout message = ( RelativeLayout ) row.findViewById( R.id.message );
 			final RelativeLayout.LayoutParams params = ( RelativeLayout.LayoutParams ) message.getLayoutParams( );

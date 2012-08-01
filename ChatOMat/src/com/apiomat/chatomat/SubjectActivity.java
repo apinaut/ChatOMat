@@ -92,21 +92,23 @@ public class SubjectActivity extends Activity
 			{
 				if ( newMessage.getText( ).toString( ).length( ) > 0 )
 				{
-					AddMessagesTask task = new AddMessagesTask( );
-					task.execute( newMessage.getText( ).toString( ) );
+					MessageModel mm = new MessageModel( );
+					mm.setText( newMessage.getText( ).toString( ) );
+					mm.setSenderUserName( MemberCache.getMyself( ) );
+
+					SubjectActivity.this.messageAdapter.add( mm );
+					newMessage.setText( "" );
+					lst.setSelection( lst.getCount( ) - 1 );
 
 					try
 					{
-						MessageModel mm = task.get( );
-						SubjectActivity.this.messageAdapter.add( mm );
+						AddMessagesTask task = new AddMessagesTask( );
+						task.execute( mm );
 					}
 					catch ( Exception e )
 					{
 						Log.e( "SubjectActivity", "Error creating new message", e );
 					}
-					newMessage.setText( "" );
-
-					lst.setSelection( lst.getCount( ) - 1 );
 				}
 				return false;
 			}
@@ -203,21 +205,15 @@ public class SubjectActivity extends Activity
 		}
 	}
 
-	private class AddMessagesTask extends AsyncTask<String, Void, MessageModel>
+	private class AddMessagesTask extends AsyncTask<MessageModel, Void, Void>
 	{
 		@Override
-		protected MessageModel doInBackground( String... msg )
+		protected Void doInBackground( MessageModel... msg )
 		{
 			try
 			{
-				MessageModel mm = new MessageModel( );
-				mm.setText( msg[ 0 ] );
-				mm.setSenderUserName( MemberCache.getMyself( ) );
-				mm.save( );
-
-				SubjectActivity.this.conv.postMessages( mm );
-
-				return mm;
+				msg[ 0 ].save( );
+				SubjectActivity.this.conv.postMessages( msg[ 0 ] );
 			}
 			catch ( Exception e )
 			{
@@ -241,6 +237,12 @@ public class SubjectActivity extends Activity
 					boolean alreadyExists = false;
 					for ( int i = 0; i < SubjectActivity.this.messageAdapter.getCount( ); i++ )
 					{
+						if ( SubjectActivity.this.messageAdapter.getItem( i ).getHref( ) == null )
+						{
+							SubjectActivity.this.messageAdapter
+								.remove( SubjectActivity.this.messageAdapter.getItem( i ) );
+							break;
+						}
 						if ( SubjectActivity.this.messageAdapter.getItem( i ).getHref( ).equals( mm.getHref( ) ) )
 						{
 							alreadyExists = true;
