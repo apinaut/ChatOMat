@@ -28,7 +28,6 @@ import java.io.RandomAccessFile;
 import java.net.URL;
 import java.util.concurrent.ExecutionException;
 
-import android.annotation.SuppressLint;
 import android.app.ActionBar;
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -56,7 +55,7 @@ import android.widget.ImageView;
 import android.widget.Spinner;
 
 import com.apiomat.frontend.ApiomatRequestException;
-import com.apiomat.frontend.basics.MemberModel;
+import com.apiomat.frontend.basics.User;
 import com.apiomat.frontend.callbacks.AOMEmptyCallback;
 
 /**
@@ -66,12 +65,12 @@ import com.apiomat.frontend.callbacks.AOMEmptyCallback;
  * The username and password of this member is then saved in the
  * {@link #onPause()} method and queried each app start later on.
  * 
- * @author andreasfey
+ * @author apiomat
  */
-@SuppressLint("NewApi")
+
 public class ProfileActivity extends Activity {
 	private static final int ACTIVITY_SELECT_IMAGE = 2;
-	private MemberModel member;
+	private User user;
 	private String newImagePath;
 
 	@Override
@@ -85,36 +84,35 @@ public class ProfileActivity extends Activity {
 		ActionBar actionBar = getActionBar();
 		actionBar.setBackgroundDrawable(actionBarBackground);
 		actionBar.setDisplayHomeAsUpEnabled(true);
-		
+
 		actionBar.setTitle(R.string.action_profile);
 
-		this.member = MemberCache.getMySelf();
+		this.user = UserCache.getMySelf();
 	}
 
 	@Override
 	protected void onResume() {
 		super.onResume();
 
-		if (this.member != null) {
-			((EditText) findViewById(R.id.profileUserName)).setText(this.member
+		if (this.user != null) {
+			((EditText) findViewById(R.id.profileUserName)).setText(this.user
 					.getUserName());
-			((EditText) findViewById(R.id.profileFirstName))
-					.setText(this.member.getFirstName());
-			((EditText) findViewById(R.id.profileLastName)).setText(this.member
+			((EditText) findViewById(R.id.profileFirstName)).setText(this.user
+					.getFirstName());
+			((EditText) findViewById(R.id.profileLastName)).setText(this.user
 					.getLastName());
-			((EditText) findViewById(R.id.profileProfession))
-					.setText(this.member.getProfession());
-			((EditText) findViewById(R.id.profileCompany)).setText(this.member
+			((EditText) findViewById(R.id.profileProfession)).setText(this.user
+					.getProfession());
+			((EditText) findViewById(R.id.profileCompany)).setText(this.user
 					.getCompany());
-			if (this.member.getAge() != null) {
-				((EditText) findViewById(R.id.profileAge)).setText(this.member
+			if (this.user.getAge() != null) {
+				((EditText) findViewById(R.id.profileAge)).setText(this.user
 						.getAge().toString());
 			}
 			((Spinner) findViewById(R.id.profileSex)).setSelection("female"
-					.equals(this.member.getSex()) ? 0 : 1);
+					.equals(this.user.getSex()) ? 0 : 1);
 
 			@SuppressWarnings("synthetic-access")
-			
 			LoadMemberImageTask task = new LoadMemberImageTask();
 			task.execute();
 			try {
@@ -142,7 +140,7 @@ public class ProfileActivity extends Activity {
 		switch (item.getItemId()) {
 		case android.R.id.home:
 			goBack(null);
-			
+
 			return true;
 		case R.id.menu_save:
 			saveProfile(null);
@@ -185,9 +183,9 @@ public class ProfileActivity extends Activity {
 	 * 
 	 * @param view
 	 */
-	public void clearProfile(@SuppressWarnings("unused") final View view) {
-		this.member = null;
-		MemberCache.setMyself(null);
+	public void clearProfile(final View view) {
+		this.user = null;
+		UserCache.setMyself(null);
 		((EditText) findViewById(R.id.profileUserName)).setText("");
 		((EditText) findViewById(R.id.profileFirstName)).setText("");
 		((EditText) findViewById(R.id.profilePassword)).setText("");
@@ -227,7 +225,7 @@ public class ProfileActivity extends Activity {
 				.length() == 0) {
 			errorMessage = "Please provide a value for field 'Company'!";
 		} else if (((EditText) findViewById(R.id.profilePassword)).getText()
-				.length() == 0 && this.member == null) {
+				.length() == 0 && this.user == null) {
 			errorMessage = "Please provide a value for field 'Password'!";
 		}
 
@@ -235,34 +233,33 @@ public class ProfileActivity extends Activity {
 			alert.setMessage(errorMessage);
 			alert.show();
 		} else {
-			if (this.member == null) {
-				this.member = new MemberModel();
+			if (this.user == null) {
+				this.user = new User();
 			}
 
-			this.member
+			this.user
 					.setUserName(((EditText) findViewById(R.id.profileUserName))
 							.getText().toString());
-			this.member
+			this.user
 					.setFirstName(((EditText) findViewById(R.id.profileFirstName))
 							.getText().toString());
-			this.member
+			this.user
 					.setLastName(((EditText) findViewById(R.id.profileLastName))
 							.getText().toString());
-			this.member
-					.setCompany(((EditText) findViewById(R.id.profileCompany))
-							.getText().toString());
-			this.member.setAge(Integer
+			this.user.setCompany(((EditText) findViewById(R.id.profileCompany))
+					.getText().toString());
+			this.user.setAge(Integer
 					.parseInt(((EditText) findViewById(R.id.profileAge))
 							.getText().toString()));
-			this.member
+			this.user
 					.setProfession(((EditText) findViewById(R.id.profileProfession))
 							.getText().toString());
-			this.member.setSex(((Spinner) findViewById(R.id.profileSex))
+			this.user.setSex(((Spinner) findViewById(R.id.profileSex))
 					.getSelectedItem().toString());
 
 			if (!((EditText) findViewById(R.id.profilePassword)).getText()
 					.toString().equals("")) {
-				this.member
+				this.user
 						.setPassword(((EditText) findViewById(R.id.profilePassword))
 								.getText().toString());
 			}
@@ -272,58 +269,49 @@ public class ProfileActivity extends Activity {
 			c.setPowerRequirement(Criteria.POWER_LOW);
 			Location location = lm.getLastKnownLocation(lm.getBestProvider(c,
 					true));
-			this.member.setLocLongitude(location.getLongitude());
-			this.member.setLocLatitude(location.getLatitude());
+			this.user.setLocLongitude(location.getLongitude());
+			this.user.setLocLatitude(location.getLatitude());
 
-			this.member.loadMeAsync(new AOMEmptyCallback() {
+			this.user.loadMeAsync(new AOMEmptyCallback() {
 
 				@SuppressWarnings("synthetic-access")
 				@Override
 				public void isDone(ApiomatRequestException exception) {
 					if (exception != null) {
-						ProfileActivity.this.member
+						ProfileActivity.this.user
 								.saveAsync(new AOMEmptyCallback() {
 
 									@Override
 									public void isDone(
 											ApiomatRequestException exception) {
-										// TODO Auto-generated method stub
-										String pw = ProfileActivity.this.member
+
+										String pw = ProfileActivity.this.user
 												.getPassword();
-										ProfileActivity.this.member
-												.setPassword(pw); // is not
-																	// returned
-																	// from
-																	// server
+										ProfileActivity.this.user
+												.setPassword(pw);
 
 										if (ProfileActivity.this.newImagePath != null) {
 											SaveMemberImageTask task2 = new SaveMemberImageTask();
-											pw = ProfileActivity.this.member
+											pw = ProfileActivity.this.user
 													.getPassword();
 											task2.execute(ProfileActivity.this.newImagePath);
 											try {
 												task2.get();
 											} catch (InterruptedException e) {
-												// TODO Auto-generated catch
-												// block
 												e.printStackTrace();
 											} catch (ExecutionException e) {
-												// TODO Auto-generated catch
-												// block
+
 												e.printStackTrace();
 											}
-											ProfileActivity.this.member
-													.setPassword(pw); // is not
-																		// returned
-																		// from
-																		// server
+											ProfileActivity.this.user
+													.setPassword(pw);
 										}
 
-										MemberCache
-												.setMyself(ProfileActivity.this.member
+										UserCache
+												.setMyself(ProfileActivity.this.user
 														.getUserName());
-										MemberCache
-												.putMember(ProfileActivity.this.member);
+										UserCache
+												.putUser(ProfileActivity.this.user);
 										goBack(view);
 
 									}
@@ -340,18 +328,18 @@ public class ProfileActivity extends Activity {
 	 * 
 	 * @param view
 	 */
-	@SuppressWarnings("unused")
+
 	public void goBack(View view) {
-		if (this.member == null) {
+		if (this.user == null) {
 			AlertDialog alert = new AlertDialog.Builder(ProfileActivity.this)
 					.create();
 			alert.setCancelable(true);
 			alert.setTitle("Member needed");
 			alert.setMessage("You need to create a profile before going on. Please fill out all fields and hit 'save'.");
 			alert.show();
-		} else if (this.member.getPassword() != "") {
+		} else if (this.user.getPassword() != "") {
 			Intent intent = new Intent();
-			MemberCache.putMember(this.member);
+			UserCache.putUser(this.user);
 			setResult(RESULT_OK, intent);
 			finish();
 		} else {
@@ -367,7 +355,7 @@ public class ProfileActivity extends Activity {
 	 * 
 	 * @param view
 	 */
-	public void changeProfileImage(@SuppressWarnings("unused") final View view) {
+	public void changeProfileImage(final View view) {
 		Intent i = new Intent(Intent.ACTION_PICK,
 				android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
 		startActivityForResult(i, ACTIVITY_SELECT_IMAGE);
@@ -375,6 +363,7 @@ public class ProfileActivity extends Activity {
 
 	/**
 	 * save image from member in a async task
+	 * 
 	 * @author Tim
 	 */
 	private class SaveMemberImageTask extends AsyncTask<String, Void, Void> {
@@ -385,12 +374,12 @@ public class ProfileActivity extends Activity {
 				String filePath = m[0];
 				byte[] imageBytes = readFile(new File(filePath));
 
-				ProfileActivity.this.member.postImage(imageBytes);
+				ProfileActivity.this.user.postImage(imageBytes);
 
 				Bitmap bmp = BitmapFactory.decodeByteArray(imageBytes, 0,
 						imageBytes.length);
-				MemberCache.putImage(ProfileActivity.this.member.getUserName(),
-						bmp);
+				UserCache
+						.putImage(ProfileActivity.this.user.getUserName(), bmp);
 			} catch (Exception e) {
 				Log.e("ProfileActivity", "Error uploading profile image", e);
 			}
@@ -424,7 +413,7 @@ public class ProfileActivity extends Activity {
 		protected Bitmap doInBackground(Void... nix) {
 			try {
 				@SuppressWarnings("synthetic-access")
-				URL newurl = new URL(ProfileActivity.this.member.getImageURL());
+				URL newurl = new URL(ProfileActivity.this.user.getImageURL());
 				return BitmapFactory.decodeStream(newurl.openConnection()
 						.getInputStream());
 			} catch (Exception e) {
@@ -442,10 +431,10 @@ public class ProfileActivity extends Activity {
 				MainActivity.EXTRA_MEMBER, MODE_PRIVATE);
 		SharedPreferences.Editor ed = mPrefs.edit();
 
-		if (this.member != null) {
-			ed.putString("userName", this.member.getUserName());
-			if (this.member.getPassword() != "") {
-				ed.putString("password", this.member.getPassword());
+		if (this.user != null) {
+			ed.putString("userName", this.user.getUserName());
+			if (this.user.getPassword() != "") {
+				ed.putString("password", this.user.getPassword());
 			}
 		} else {
 			ed.remove("userName");

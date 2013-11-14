@@ -40,7 +40,7 @@ import android.util.AttributeSet;
 
 import android.view.View;
 
-import com.apiomat.chatomat.MemberCache;
+import com.apiomat.chatomat.UserCache;
 import com.apiomat.chatomat.R;
 import com.apiomat.frontend.ApiomatRequestException;
 import com.apiomat.frontend.callbacks.AOMEmptyCallback;
@@ -52,7 +52,6 @@ import com.apiomat.frontend.chat.ConversationModel;
  * 
  * @author andreasfey
  */
-@SuppressWarnings("deprecation")
 @SuppressLint({ "DrawAllocation", "SimpleDateFormat" })
 public class ConversationSubjectView extends View {
 	private ConversationModel conversation;
@@ -175,9 +174,9 @@ public class ConversationSubjectView extends View {
 				Resources res = getResources();
 				BitmapDrawable drawable = (BitmapDrawable) res
 						.getDrawable(R.drawable.profilimg_default);
-				if (MemberCache.containsImage(this.lastMessage
+				if (UserCache.containsImage(this.lastMessage
 						.getSenderUserName())) {
-					Bitmap bm = MemberCache.getImage(this.lastMessage
+					Bitmap bm = UserCache.getImage(this.lastMessage
 							.getSenderUserName());
 					drawable = new BitmapDrawable(res, bm);
 				}

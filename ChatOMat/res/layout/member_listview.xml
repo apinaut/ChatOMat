@@ -4,7 +4,7 @@
     android:layout_height="wrap_content"
     android:orientation="vertical" >
 
-    <com.apiomat.chatomat.views.MemberView
+    <com.apiomat.chatomat.views.UserView
         android:id="@+id/memberView"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content" />

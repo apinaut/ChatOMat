@@ -39,9 +39,9 @@ import com.apiomat.frontend.chat.ConversationModel;
  * Adapter for the list of conversations shown in the main activity. The items in this list are of a self-developed view
  * named {@link ConversationSubjectView}
  * 
- * @author andreasfey
+ * @author apiomat
  */
-@SuppressWarnings("deprecation")
+
 public class ConversationAdapter extends ArrayAdapter<ConversationModel>
 {
 	ViewGroup lastParent;

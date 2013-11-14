@@ -28,7 +28,6 @@ import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import android.annotation.SuppressLint;
 import android.app.ActionBar;
 import android.app.Activity;
 import android.app.AlertDialog;
@@ -52,31 +51,24 @@ import android.widget.ListView;
 import com.apiomat.chatomat.adapter.ConversationAdapter;
 import com.apiomat.frontend.ApiomatRequestException;
 import com.apiomat.frontend.Datastore;
-import com.apiomat.frontend.basics.MemberModel;
+import com.apiomat.frontend.basics.User;
 import com.apiomat.frontend.callbacks.AOMCallback;
 import com.apiomat.frontend.callbacks.AOMEmptyCallback;
 import com.apiomat.frontend.chat.ChatMessageModel;
 import com.apiomat.frontend.chat.ConversationModel;
 
-
 /**
  * First screen showing a list of conversations
  * 
- * @author andreasfey
+ * @author apiomat
  */
 
-@SuppressLint("NewApi")
 public class MainActivity extends Activity {
 
-	@SuppressWarnings("javadoc")
 	public static final String EXTRA_POSITION = "position";
-	@SuppressWarnings("javadoc")
 	public static final String EXTRA_CONVERSATION = "conv";
-	@SuppressWarnings("javadoc")
 	public static final String EXTRA_USERNAME = "username";
-	@SuppressWarnings("javadoc")
 	public static final String EXTRA_MEMBER = "member";
-	@SuppressWarnings("javadoc")
 	public static final String EXTRA_LAST_MESSAGE = "lastMessageText";
 
 	static final int EXPECTED_SUBJECT_CODE = 1;
@@ -85,7 +77,6 @@ public class MainActivity extends Activity {
 	private ConversationAdapter adapter;
 	private Timer t;
 
-	@SuppressLint("NewApi")
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -107,7 +98,7 @@ public class MainActivity extends Activity {
 		final ActivitySwipeDetector activitySwipeDetector = new ActivitySwipeDetector();
 		convList.setOnTouchListener(activitySwipeDetector);
 		convList.setOnItemClickListener(new OnItemClickListener() {
-			@SuppressWarnings("synthetic-access")
+
 			@Override
 			public void onItemClick(AdapterView<?> parent, View view,
 					int position, long id) {
@@ -131,9 +122,9 @@ public class MainActivity extends Activity {
 			Intent intent = new Intent(this, ProfileActivity.class);
 			startActivityForResult(intent, EXPECTED_PROFILE_CODE);
 		} else {
-			MemberCache.loadMemberToCache(mPrefs.getString("userName", ""),
+			UserCache.loadMemberToCache(mPrefs.getString("userName", ""),
 					mPrefs.getString("password", ""));
-			MemberCache.setMyself(mPrefs.getString("userName", ""));
+			UserCache.setMyself(mPrefs.getString("userName", ""));
 		}
 	}
 
@@ -145,6 +136,7 @@ public class MainActivity extends Activity {
 		super.onPause();
 		this.t.cancel();
 	}
+
 	/**
 	 * onResume --> start task
 	 */
@@ -154,30 +146,30 @@ public class MainActivity extends Activity {
 		super.onResume();
 
 		this.t = new Timer();
-		if (MemberCache.getMySelf() != null) {
+		if (UserCache.getMySelf() != null) {
 			/* Start timer to fetch messages periodically */
 			this.t.scheduleAtFixedRate(new RefreshConversationsTimer(), 0,
 					10000);
 		}
 	}
 
-	@SuppressWarnings("deprecation")
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode,
 			Intent intent) {
 		super.onActivityResult(requestCode, resultCode, intent);
 		if (requestCode == EXPECTED_PROFILE_CODE) {
 			if (resultCode == RESULT_OK) {
-				MemberModel memberModel = new MemberModel();
-				memberModel.setUserName(MemberCache.getMySelf().getUserName());
-				memberModel.setPassword(MemberCache.getMySelf().getPassword());
-				Datastore.configure(memberModel);
+				User user = new User();
+
+				user.setUserName(UserCache.getMySelf().getUserName());
+				user.setPassword(UserCache.getMySelf().getPassword());
+				Datastore.configure(user);
 				onResume();
-			} else if (MemberCache.getMyself() == null) {
-				MemberModel memberModel = new MemberModel();
-				memberModel.setUserName("");
-				memberModel.setPassword("");
-				Datastore.configure(memberModel);
+			} else if (UserCache.getMyself() == null) {
+				User user = new User();
+				user.setUserName("");
+				user.setPassword("");
+				Datastore.configure(user);
 				this.adapter.clear();
 				AlertDialog dialog = new AlertDialog.Builder(this).create();
 				dialog.setMessage("You have to create a profile using the apinaut button before going on!");
@@ -217,22 +209,24 @@ public class MainActivity extends Activity {
 	 * 
 	 * @param view
 	 */
-	public void openProfile(@SuppressWarnings("unused") View view) {
+	public void openProfile(View view) {
 		Intent intent = new Intent(this, ProfileActivity.class);
 		startActivityForResult(intent, EXPECTED_PROFILE_CODE);
 	}
 
 	/**
 	 * Opens the list of members
+	 * 
 	 * @param view
 	 */
-	public void addAttendee(@SuppressWarnings("unused") View view) {
-		Intent intent = new Intent(this, MemberSelectionActivity.class);
+	public void addAttendee(View view) {
+		Intent intent = new Intent(this, UserSelectionActivity.class);
 		startActivity(intent);
 	}
 
 	/**
 	 * Delete Conversation
+	 * 
 	 * @param model
 	 */
 	private void deleteItem(final ConversationModel model) {
@@ -270,50 +264,44 @@ public class MainActivity extends Activity {
 
 	/**
 	 * refresh all conversations in a timerTask
-	 * @author Tim
+	 * 
 	 */
 	private class RefreshConversationsTimer extends TimerTask {
-		@SuppressWarnings("synthetic-access")
+
 		@Override
 		public void run() {
-			
+
 			ConversationModel.getConversationModelsAsync("",
 					MainActivity.this.conversationList);
 
 		}
 	}
-	
+
 	/**
 	 * Get all conversations in a list <Async Task>
 	 */
 	private AOMCallback<List<ConversationModel>> conversationList = new AOMCallback<List<ConversationModel>>() {
 
-		@SuppressWarnings("synthetic-access")
 		@Override
-		public void isDone(
-				List<ConversationModel> resultObject,
+		public void isDone(List<ConversationModel> resultObject,
 				ApiomatRequestException exception) {
 			if (exception == null) {
 				for (final ConversationModel mm : resultObject) {
 					boolean alreadyExists = false;
-					for (int i = 0; i < MainActivity.this.adapter
-							.getCount(); i++) {
-						if (MainActivity.this.adapter
-								.getItem(i).getHref()
+					for (int i = 0; i < MainActivity.this.adapter.getCount(); i++) {
+						if (MainActivity.this.adapter.getItem(i).getHref()
 								.equals(mm.getHref())) {
 							alreadyExists = true;
 							break;
 						}
 					}
 					if (!alreadyExists) {
-						MainActivity.this
-								.runOnUiThread(new Runnable() {
-									@Override
-									public void run() {
-										MainActivity.this.adapter
-												.add(mm);
-									}
-								});
+						MainActivity.this.runOnUiThread(new Runnable() {
+							@Override
+							public void run() {
+								MainActivity.this.adapter.add(mm);
+							}
+						});
 					}
 				}
 
@@ -326,7 +314,7 @@ public class MainActivity extends Activity {
 
 	/**
 	 * detect a swipe on a item
-	 * @author Tim
+	 * 
 	 */
 	class ActivitySwipeDetector implements View.OnTouchListener {
 		static final String logTag = "ActivitySwipeDetector";

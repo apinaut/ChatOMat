@@ -26,7 +26,6 @@ import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import android.annotation.SuppressLint;
 import android.app.ActionBar;
 import android.app.Activity;
 import android.content.Intent;
@@ -58,16 +57,15 @@ import com.apiomat.frontend.chat.ConversationModel;
  * Activity which shows the conversation details, starting with the attendees,
  * the subject and all messages as baloons
  * 
- * @author andreasfey
+ * @author apiomat
  */
-@SuppressWarnings("deprecation")
-@SuppressLint("NewApi")
 public class SubjectActivity extends Activity {
 	private ConversationModel conv;
 	private ChatMessageAdapter chatMessageAdapter;
 	private AttendeeAdapter attendeeAdapter;
 	private Timer t;
 
+	@SuppressWarnings("unchecked")
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -101,7 +99,7 @@ public class SubjectActivity extends Activity {
 
 		final ListView mlist = (ListView) findViewById(R.id.messageList);
 		this.chatMessageAdapter = new ChatMessageAdapter(this,
-				MemberCache.getMyself());
+				UserCache.getMyself());
 		mlist.setAdapter(this.chatMessageAdapter);
 
 		/* new message */
@@ -115,13 +113,13 @@ public class SubjectActivity extends Activity {
 				if (newMessage.getText().toString().length() > 0) {
 					final ChatMessageModel chatMessageModel = new ChatMessageModel();
 					chatMessageModel.setText(newMessage.getText().toString());
-					chatMessageModel.setSenderUserName(MemberCache.getMyself());
+					chatMessageModel.setSenderUserName(UserCache.getMyself());
 					AOMEmptyCallback chatMessageSaveAsync = new AOMEmptyCallback() {
 
 						@Override
 						public void isDone(ApiomatRequestException exception) {
 							if (exception == null) {
-								//post messages <Async task>
+								// post messages <Async task>
 								SubjectActivity.this.conv.postMessagesAsync(
 										chatMessageModel,
 										new AOMEmptyCallback() {
@@ -168,7 +166,7 @@ public class SubjectActivity extends Activity {
 	 * 
 	 * @param view
 	 */
-	public void goBack(@SuppressWarnings("unused") View view) {
+	public void goBack(View view) {
 		/* called from Main screen */
 		Intent intent = new Intent();
 
@@ -178,7 +176,7 @@ public class SubjectActivity extends Activity {
 					.getItem(this.chatMessageAdapter.getCount() - 1);
 			intent.putExtra(MainActivity.EXTRA_LAST_MESSAGE, msg);
 			intent.putExtra(MainActivity.EXTRA_MEMBER,
-					this.chatMessageAdapter.getMemberFromLastMessage());
+					this.chatMessageAdapter.getUserFromLastMessage());
 		} else {
 			setResult(RESULT_CANCELED, intent);
 		}
@@ -190,8 +188,8 @@ public class SubjectActivity extends Activity {
 	 * 
 	 * @param view
 	 */
-	public void addAttendee(@SuppressWarnings("unused") View view) {
-		Intent intent = new Intent(this, MemberSelectionActivity.class);
+	public void addAttendee(View view) {
+		Intent intent = new Intent(this, UserSelectionActivity.class);
 		intent.putExtra(MainActivity.EXTRA_CONVERSATION, this.conv);
 		startActivityForResult(intent, 0);
 	}
@@ -248,6 +246,7 @@ public class SubjectActivity extends Activity {
 
 	/**
 	 * refresh messages in a TimerTask
+	 * 
 	 * @author Tim
 	 */
 	private class RefreshMessagesTimer extends TimerTask {

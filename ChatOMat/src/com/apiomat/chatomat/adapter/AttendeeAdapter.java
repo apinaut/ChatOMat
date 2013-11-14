@@ -34,13 +34,13 @@ import android.widget.ArrayAdapter;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.apiomat.chatomat.MemberCache;
+import com.apiomat.chatomat.UserCache;
 import com.apiomat.chatomat.R;
 
 /**
  * Adapter for the grid of attendee user names and images shown in the conversation subject activity
  * 
- * @author andreasfey
+ * @author apiomat
  */
 public class AttendeeAdapter extends ArrayAdapter<String>
 {
@@ -67,7 +67,7 @@ public class AttendeeAdapter extends ArrayAdapter<String>
 		TextView text = ( TextView ) row.findViewById( R.id.attendeeName );
 		text.setText( getItem( position ) );
 
-		Bitmap bm = MemberCache.getImage( getItem( position ) );
+		Bitmap bm = UserCache.getImage( getItem( position ) );
 		if ( bm != null )
 		{
 			image.setImageBitmap( bm );
