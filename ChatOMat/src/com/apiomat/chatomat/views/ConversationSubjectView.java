@@ -23,7 +23,6 @@
 package com.apiomat.chatomat.views;
 
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
 import java.util.List;
 
 import android.annotation.SuppressLint;
@@ -36,30 +35,32 @@ import android.graphics.Paint;
 import android.graphics.Paint.Align;
 import android.graphics.Typeface;
 import android.graphics.drawable.BitmapDrawable;
-import android.os.AsyncTask;
+
 import android.util.AttributeSet;
-import android.util.Log;
+
 import android.view.View;
 
 import com.apiomat.chatomat.MemberCache;
 import com.apiomat.chatomat.R;
+import com.apiomat.frontend.ApiomatRequestException;
+import com.apiomat.frontend.callbacks.AOMEmptyCallback;
+import com.apiomat.frontend.chat.ChatMessageModel;
 import com.apiomat.frontend.chat.ConversationModel;
-import com.apiomat.frontend.chat.MessageModel;
 
 /**
  * View for displaying a Conversation in the main activity.
  * 
  * @author andreasfey
  */
-@SuppressLint( "DrawAllocation" )
-public class ConversationSubjectView extends View
-{
+@SuppressWarnings("deprecation")
+@SuppressLint({ "DrawAllocation", "SimpleDateFormat" })
+public class ConversationSubjectView extends View {
 	private ConversationModel conversation;
-	private final SimpleDateFormat sdf = new SimpleDateFormat( "dd.MM.yyyy" );
+	private final SimpleDateFormat sdf = new SimpleDateFormat("dd.MM.yyyy");
 	private static final int HEIGHT = 80;
-	private static final int BORDER = 10;
+	private static final int BORDER = 15;
 
-	private MessageModel lastMessage;
+	private ChatMessageModel lastMessage;
 
 	/**
 	 * Constructor
@@ -68,10 +69,10 @@ public class ConversationSubjectView extends View
 	 * @param attrs
 	 * @param defStyle
 	 */
-	public ConversationSubjectView( Context context, AttributeSet attrs, int defStyle )
-	{
-		super( context, attrs, defStyle );
-		setMinimumHeight( HEIGHT );
+	public ConversationSubjectView(Context context, AttributeSet attrs,
+			int defStyle) {
+		super(context, attrs, defStyle);
+		setMinimumHeight(HEIGHT);
 	}
 
 	/**
@@ -80,10 +81,9 @@ public class ConversationSubjectView extends View
 	 * @param context
 	 * @param attrs
 	 */
-	public ConversationSubjectView( Context context, AttributeSet attrs )
-	{
-		super( context, attrs );
-		setMinimumHeight( HEIGHT );
+	public ConversationSubjectView(Context context, AttributeSet attrs) {
+		super(context, attrs);
+		setMinimumHeight(HEIGHT);
 	}
 
 	/**
@@ -91,10 +91,9 @@ public class ConversationSubjectView extends View
 	 * 
 	 * @param context
 	 */
-	public ConversationSubjectView( Context context )
-	{
-		super( context );
-		setMinimumHeight( HEIGHT );
+	public ConversationSubjectView(Context context) {
+		super(context);
+		setMinimumHeight(HEIGHT);
 	}
 
 	/**
@@ -102,106 +101,90 @@ public class ConversationSubjectView extends View
 	 * 
 	 * @param conversation
 	 */
-	public final void setConversation( ConversationModel conversation )
-	{
+
+	@SuppressWarnings("synthetic-access")
+	public final void setConversation(ConversationModel conversation) {
 		this.conversation = conversation;
 
-		try
-		{
-			LoadConversationMessagessTask task = new LoadConversationMessagessTask( );
-			task.execute( );
-			List<MessageModel> mms = task.get( );
-			if ( mms != null && mms.size( ) > 0 )
-			{
-				this.lastMessage = mms.get( mms.size( ) - 1 );
-			}
-		}
-		catch ( Exception e )
-		{
-			Log.e( "ConversationSubject",
-				"Messages could not be loaded from conversation " + this.conversation.getSubject( ), e );
-		}
+		ConversationSubjectView.this.conversation.loadMessagesAsync("",
+				new AOMEmptyCallback() {
+
+					@Override
+					public void isDone(ApiomatRequestException exception) {
+						List<ChatMessageModel> mms = ConversationSubjectView.this.conversation
+								.getMessages();
+						if (mms != null && mms.size() > 0) {
+							ConversationSubjectView.this.lastMessage = mms
+									.get(mms.size() - 1);
+						}
+					}
+				});
+
 	}
 
 	/**
-	 * Helper method to update the last message if something on the conversation changed; this helps avoiding to load
-	 * all messages again to determine these value
+	 * Helper method to update the last message if something on the conversation
+	 * changed; this helps avoiding to load all messages again to determine
+	 * these value
 	 * 
 	 * @param lastMessage
 	 */
-	public final void setLastMessage( MessageModel lastMessage )
-	{
+	public final void setLastMessage(ChatMessageModel lastMessage) {
 		this.lastMessage = lastMessage;
 	}
 
 	@Override
-	protected void onDraw( Canvas canvas )
-	{
-		super.onDraw( canvas );
+	protected void onDraw(Canvas canvas) {
+		super.onDraw(canvas);
 
-		if ( this.conversation != null )
-		{
+		if (this.conversation != null) {
 			/* subject */
-			Paint paint = new Paint( );
-			paint.setColor( Color.BLACK );
-			paint.setAntiAlias( true );
-			paint.setTypeface( Typeface.DEFAULT_BOLD );
-			paint.setTextSize( 24 );
-			canvas.drawText( this.conversation.getSubject( ), HEIGHT + 20f, 20f, paint );
+			Paint paint = new Paint();
+			paint.setColor(Color.BLACK);
+			paint.setAntiAlias(true);
+			paint.setTypeface(Typeface.DEFAULT_BOLD);
+			paint.setTextSize(24);
+			canvas.drawText(this.conversation.getSubject(), HEIGHT + 30f, 20f,
+					paint);
 
 			/* created at */
-			paint = new Paint( );
-			paint.setColor( Color.BLACK );
-			paint.setTextSize( 18 );
-			paint.setAntiAlias( true );
-			paint.setTypeface( Typeface.DEFAULT );
-			String date = this.sdf.format( this.conversation.getCreatedAt( ) );
-			paint.setTextAlign( Align.RIGHT );
-			canvas.drawText( date, canvas.getWidth( ) - BORDER, 23f, paint );
+			paint = new Paint();
+			paint.setColor(Color.BLACK);
+			paint.setTextSize(18);
+			paint.setAntiAlias(true);
+			paint.setTypeface(Typeface.DEFAULT);
+			String date = this.sdf.format(this.conversation.getCreatedAt());
+			paint.setTextAlign(Align.RIGHT);
+			canvas.drawText(date, canvas.getWidth() - BORDER, 23f, paint);
 
 			/* last message */
-			if ( this.lastMessage != null )
-			{
-				paint = new Paint( );
-				paint.setColor( Color.BLACK );
-				paint.setAntiAlias( true );
-				paint.setTypeface( Typeface.DEFAULT );
-				paint.setTextSize( 24 );
-				String text = this.lastMessage.getSenderUserName( ) + ":" + this.lastMessage.getText( );
-				if ( text.length( ) > 50 )// TODO berechnen, nicht schaetzen
-				{
-					text = text.substring( 0, 50 );
+			if (this.lastMessage != null) {
+				paint = new Paint();
+				paint.setColor(Color.BLACK);
+				paint.setAntiAlias(true);
+				paint.setTypeface(Typeface.DEFAULT);
+				paint.setTextSize(24);
+				String text = this.lastMessage.getSenderUserName() + ":"
+						+ this.lastMessage.getText();
+				if (text.length() > 50) {
+					text = text.substring(0, 50);
 				}
-				canvas.drawText( text, HEIGHT + 20, HEIGHT - BORDER, paint );
+				canvas.drawText(text, HEIGHT + 200, HEIGHT - BORDER, paint);
 
 				/* sender image */
-				Resources res = getResources( );
-				BitmapDrawable drawable = ( BitmapDrawable ) res.getDrawable( R.drawable.profilimg_default );
-				if ( MemberCache.containsImage( this.lastMessage.getSenderUserName( ) ) )
-				{
-					Bitmap bm = MemberCache.getImage( this.lastMessage.getSenderUserName( ) );
-					drawable = new BitmapDrawable( res, bm );
+				Resources res = getResources();
+				BitmapDrawable drawable = (BitmapDrawable) res
+						.getDrawable(R.drawable.profilimg_default);
+				if (MemberCache.containsImage(this.lastMessage
+						.getSenderUserName())) {
+					Bitmap bm = MemberCache.getImage(this.lastMessage
+							.getSenderUserName());
+					drawable = new BitmapDrawable(res, bm);
 				}
 
-				drawable.setBounds( BORDER, BORDER, HEIGHT - BORDER, HEIGHT - BORDER );
-				drawable.draw( canvas );
-			}
-		}
-	}
-
-	private class LoadConversationMessagessTask extends AsyncTask<Void, Void, List<MessageModel>>
-	{
-		@Override
-		protected List<MessageModel> doInBackground( Void... nix )
-		{
-			try
-			{
-				return ConversationSubjectView.this.conversation.loadMessages( "" );
-			}
-			catch ( Exception e )
-			{
-				Log.e( "LoadConversationsTask", "Error loading messages", e );
-				return new ArrayList<MessageModel>( );
+				drawable.setBounds(BORDER, BORDER+200, HEIGHT - BORDER, HEIGHT
+						- BORDER);
+				drawable.draw(canvas);
 			}
 		}
 	}

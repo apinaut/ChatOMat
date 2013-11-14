@@ -12,5 +12,26 @@
     </string-array>
     <string name="messagepopup_text">Your message:</string>
     <string name="send">Send</string>
+    <string name="action_settings">Settings</string>
+    
+    <string name="action_add_attendee">Add attendee</string>
+    <string name="action_profile">Profile</string>
+    <string name="action_conversations">Conversations</string>
+    
+    <string name="menu_clear">Clear</string>
+    <string name="menu_save">Save</string>
+    
+    <!-- profile activity layout -->
+    <string name="seperator">Seperator</string>
+    <string name="profileImage">Profile Image</string>
+    <string name="profileFirstName">First Name</string>
+    <string name="profileLastName">Last Name</string>
+    <string name="profileUsername">Username</string>
+    <string name="profilePassword">Password</string>
+    <string name="profileCompany">Company</string>
+    <string name="profileProfession">Profession</string>
+    <string name="profileSex">Sex</string>
+    <string name="profileAge">Age</string>
+    
 
 </resources>

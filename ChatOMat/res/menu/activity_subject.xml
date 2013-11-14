@@ -1,6 +1,12 @@
-<menu xmlns:android="http://schemas.android.com/apk/res/android">
-    <item android:id="@+id/menu_settings"
-        android:title="@string/menu_settings"
+<menu xmlns:android="http://schemas.android.com/apk/res/android" >
+
+    <!--
+         <item
+        android:id="@+id/menu_add_attendee"
+        android:icon="@drawable/plusv1"
         android:orderInCategory="100"
-        android:showAsAction="never" />
+        android:showAsAction="always"
+        android:title="@string/menu_settings"/>
+    -->
+
 </menu>

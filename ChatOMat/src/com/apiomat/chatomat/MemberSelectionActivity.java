@@ -24,124 +24,183 @@
 import java.util.Arrays;
 import java.util.List;
 
+import android.annotation.SuppressLint;
+import android.app.ActionBar;
 import android.app.Activity;
 import android.app.AlertDialog;
-import android.content.Context;
+
+import android.content.DialogInterface;
 import android.content.Intent;
-import android.os.AsyncTask;
+import android.content.res.Resources;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.Gravity;
-import android.view.LayoutInflater;
 import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
-import android.view.View.OnClickListener;
+
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
-import android.widget.Button;
+
 import android.widget.EditText;
+
 import android.widget.ListView;
-import android.widget.PopupWindow;
 
 import com.apiomat.chatomat.adapter.MemberAdapter;
-import com.apiomat.frontend.Datastore;
+import com.apiomat.frontend.ApiomatRequestException;
 import com.apiomat.frontend.basics.MemberModel;
+import com.apiomat.frontend.callbacks.AOMCallback;
+import com.apiomat.frontend.callbacks.AOMEmptyCallback;
+import com.apiomat.frontend.chat.ChatMessageModel;
 import com.apiomat.frontend.chat.ConversationModel;
-import com.apiomat.frontend.chat.MessageModel;
 
 /**
- * Acitivity which shows a list of members; the user can select one to add him to a new or existing conversation. <br/>
- * This activity may be called by pressing the plus button either from the {@link MainActivity}, which means member for
- * a <b>new</b> conversation is selected, or from the {@link SubjectActivity}, which means a member will be added to an
- * existing conversation.
+ * Acitivity which shows a list of members; the user can select one to add him
+ * to a new or existing conversation. <br/>
+ * This activity may be called by pressing the plus button either from the
+ * {@link MainActivity}, which means member for a <b>new</b> conversation is
+ * selected, or from the {@link SubjectActivity}, which means a member will be
+ * added to an existing conversation.
  * 
  * @author andreasfey
  */
-public class MemberSelectionActivity extends Activity
-{
+@SuppressWarnings("deprecation")
+@SuppressLint("NewApi")
+public class MemberSelectionActivity extends Activity {
 	private ConversationModel conv;
 	private MemberAdapter adapter;
 	boolean startNewConversation = true;
+	ListView list;
+	int position;
 
 	@Override
-	public void onCreate( Bundle savedInstanceState )
-	{
-		super.onCreate( savedInstanceState );
-		setContentView( R.layout.activity_member_selection );
-
-		final Intent i = getIntent( );
-		if ( i.getExtras( ) != null && i.getExtras( ).containsKey( MainActivity.EXTRA_CONVERSATION ) )
-		{
-			this.startNewConversation = false;
-			this.conv =
-				( ConversationModel ) i.getExtras( ).getSerializable( MainActivity.EXTRA_CONVERSATION );
+	public void onCreate(Bundle savedInstanceState) {
+		final Intent i = getIntent();
+		if (i.getExtras() != null
+				&& i.getExtras().containsKey(MainActivity.EXTRA_CONVERSATION)) {
+			MemberSelectionActivity.this.startNewConversation = false;
+			MemberSelectionActivity.this.conv = (ConversationModel) i
+					.getExtras().getSerializable(
+							MainActivity.EXTRA_CONVERSATION);
 		}
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.activity_member_selection);
+		Resources res = getResources();
+		Bitmap bMap = BitmapFactory.decodeResource(res,
+				R.drawable.apinauts_header_clean);
+		BitmapDrawable actionBarBackground = new BitmapDrawable(res, bMap);
+		ActionBar actionBar = getActionBar();
+		actionBar.setBackgroundDrawable(actionBarBackground);
+		actionBar.setDisplayHomeAsUpEnabled(true);
 
-		final ListView list = ( ListView ) findViewById( R.id.listViewAttendees );
-		this.adapter = new MemberAdapter( this );
-		list.setAdapter( this.adapter );
-		list.setOnItemClickListener( new OnItemClickListener( )
-		{
+		actionBar.setTitle(R.string.action_add_attendee);
+
+		this.list = (ListView) findViewById(R.id.listViewAttendees);
+		this.adapter = new MemberAdapter(this);
+		this.list.setAdapter(this.adapter);
+		this.list.setOnItemClickListener(new OnItemClickListener() {
+			@SuppressWarnings("synthetic-access")
 			@Override
-			public void onItemClick( AdapterView<?> parent, View view,
-				int position, long id )
-			{
-				if ( MemberSelectionActivity.this.startNewConversation )
-				{
-					addConversation( view, ( MemberModel ) list.getItemAtPosition( position ) );
-				}
-				else
-				{
-					addAttendee( ( MemberModel ) list.getItemAtPosition( position ) );
+			public void onItemClick(AdapterView<?> parent, View view,
+					int position, long id) {
+				if (MemberSelectionActivity.this.startNewConversation) {
+					addConversation(view,
+							(MemberModel) MemberSelectionActivity.this.list
+									.getItemAtPosition(position));
+				} else {
+					MemberSelectionActivity.this.position = position;
+					final MemberModel memberModel = (MemberModel) MemberSelectionActivity.this.list
+							.getItemAtPosition(position);
+					memberModel.loadMeAsync(new AOMEmptyCallback() {
 
-					Intent intent = new Intent( );
-					MemberModel m = ( MemberModel ) list.getItemAtPosition( position );
-					intent.putExtra( MainActivity.EXTRA_USERNAME, m.getUserName( ) );
-					setResult( RESULT_OK, intent );
-					finish( );
+						@Override
+						public void isDone(ApiomatRequestException exception) {
+							if (exception == null) {
+								addAttendeeInConversation(memberModel,
+										MemberSelectionActivity.this.conv);
+							} else {
+								Log.e("MemberSelectionActivity",
+										"Couldn't load MemberModel");
+							}
+
+						}
+					});
+
 				}
 			}
 
-		} );
+		});
 
-		LoadMembersTask task = new LoadMembersTask( );
-		task.execute( );
-		try
-		{
-			this.adapter.clear( );
-			for ( MemberModel m : task.get( ) )
-			{
-				this.adapter.add( m );
+		StringBuffer filter = new StringBuffer();
+		if (MemberSelectionActivity.this.conv != null) {
+			for (String attendee : (List<String>) MemberSelectionActivity.this.conv
+					.getAttendeeUserNames()) {
+
+				if (filter.length() > 0) {
+					filter.append(" AND ");
+				}
+				filter.append("userName != \"" + attendee + "\"");
 			}
+		} else {
+			filter.append("userName != \"" + MemberCache.getMyself() + "\"");
 		}
-		catch ( Exception e )
-		{
-			Log.e( "AttendeeAdapter", "Error loading members of app", e );
-		}
+
+		// Get MemberModels with filter
+		MemberModel.getMemberModelsAsync(filter.toString(),
+				new AOMCallback<List<MemberModel>>() {
+
+					@SuppressWarnings("synthetic-access")
+					@Override
+					public void isDone(List<MemberModel> resultObject,
+							ApiomatRequestException exception) {
+						for (MemberModel m : resultObject) {
+
+							MemberSelectionActivity.this.adapter.add(m);
+						}
+
+					}
+				});
+
 	}
 
 	@Override
-	public boolean onCreateOptionsMenu( Menu menu )
-	{
-		getMenuInflater( ).inflate( R.menu.activity_attendee_selection, menu );
+	public boolean onCreateOptionsMenu(Menu menu) {
+		getMenuInflater().inflate(R.menu.activity_attendee_selection, menu);
 		return true;
+	}
+
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		// Handle item selection
+		switch (item.getItemId()) {
+		case android.R.id.home:
+			goBack(null);
+
+			return true;
+		default:
+			return super.onOptionsItemSelected(item);
+		}
 	}
 
 	/** pass back results to main screen */
 	@Override
-	protected void onActivityResult( int requestCode, int resultCode, Intent intent )
-	{
-		super.onActivityResult( requestCode, resultCode, intent );
-		if ( resultCode == RESULT_OK )
-		{
-			MemberModel sender = ( MemberModel ) intent.getExtras( ).getSerializable( MainActivity.EXTRA_MEMBER );
-			MessageModel msg = ( MessageModel ) intent.getExtras( ).getSerializable( MainActivity.EXTRA_LAST_MESSAGE );
+	protected void onActivityResult(int requestCode, int resultCode,
+			Intent intent) {
+		super.onActivityResult(requestCode, resultCode, intent);
+		if (resultCode == RESULT_OK) {
+			MemberModel sender = (MemberModel) intent.getExtras()
+					.getSerializable(MainActivity.EXTRA_MEMBER);
+			ChatMessageModel msg = (ChatMessageModel) intent.getExtras()
+					.getSerializable(MainActivity.EXTRA_LAST_MESSAGE);
 
-			setResult( RESULT_OK, intent );
-			intent.putExtra( MainActivity.EXTRA_LAST_MESSAGE, msg );
-			intent.putExtra( MainActivity.EXTRA_MEMBER, sender );
+			setResult(RESULT_OK, intent);
+			intent.putExtra(MainActivity.EXTRA_LAST_MESSAGE, msg);
+			intent.putExtra(MainActivity.EXTRA_MEMBER, sender);
+
 		}
-		finish( );
+		finish();
 	}
 
 	/**
@@ -149,161 +208,172 @@ public class MemberSelectionActivity extends Activity
 	 * 
 	 * @param view
 	 */
-	public void goBack( @SuppressWarnings( "unused" ) View view )
-	{
-		finish( );
-	}
-
-	private void addAttendee( final MemberModel m )
-	{
-		AddAttendeeTask task = new AddAttendeeTask( );
-		task.execute( m );
-		try
-		{
-			task.get( );
-		}
-		catch ( Exception e )
-		{
-			Log.e( "MemberAdapter", "Error saving attendees", e );
-		}
-	}
-
-	private void addConversation( View view, final MemberModel m )
-	{
-		LayoutInflater inflater = ( LayoutInflater ) this.getSystemService( Context.LAYOUT_INFLATER_SERVICE );
-		View popupView = inflater.inflate( R.layout.subject_popup, null, false );
-		final PopupWindow pw = new PopupWindow( popupView, 300, 260, true );
-		final EditText subject = ( EditText ) popupView.findViewById( R.id.subjectText );
-		final Button okButton = ( Button ) popupView.findViewById( R.id.subjectTextOK );
-		final Button cancelButton = ( Button ) popupView.findViewById( R.id.subjectTextCancel );
-
-		cancelButton.setOnClickListener( new OnClickListener( )
-		{
-			@Override
-			public void onClick( View paramView )
-			{
-				pw.dismiss( );
-			}
-		} );
-		okButton.setOnClickListener( new OnClickListener( )
-		{
-			@Override
-			public void onClick( View v )
-			{
-				if ( subject.getText( ).length( ) == 0 )
-				{
-					AlertDialog alert = new AlertDialog.Builder( MemberSelectionActivity.this ).create( );
-					alert.setCancelable( true );
-					alert.setTitle( "Subject must not be empty" );
-					alert.setMessage( "We need a subject to create a new conversation." );
-					alert.show( );
-					return;
-				}
-
-				pw.dismiss( );
-
-				try
-				{
-					AddConversationsTask task = new AddConversationsTask( );
-					task.execute( subject.getText( ).toString( ) );
-					task.get( );
-
-					addAttendee( m );
-
-					Intent intent = new Intent( MemberSelectionActivity.this, SubjectActivity.class );
-					intent.putExtra( MainActivity.EXTRA_CONVERSATION, MemberSelectionActivity.this.conv );
-					startActivityForResult( intent, MainActivity.EXPECTED_SUBJECT_CODE );
-				}
-				catch ( Exception e )
-				{
-					Log.e( "MainActivity", "Error creating new conversation", e );
-				}
-			}
-		} );
-		pw.showAtLocation( view, Gravity.CENTER, 0, 0 );
-	}
-
-	private class AddAttendeeTask extends AsyncTask<MemberModel, Void, Void>
-	{
-		@Override
-		protected Void doInBackground( MemberModel... member )
-		{
-			try
-			{
-				List<String> userNames = MemberSelectionActivity.this.conv.getAttendeeUserNames( );
-				userNames.add( member[ 0 ].getUserName( ) );
-				MemberSelectionActivity.this.conv.setAttendeeUserNames( userNames );
-				MemberSelectionActivity.this.conv.save( );
-			}
-			catch ( Exception e )
-			{
-				Log.e( "MemberAdapter", "Error saving attendees", e );
-			}
-			return null;
-		}
+	public void goBack(@SuppressWarnings("unused") View view) {
+		finish();
 	}
 
 	/**
-	 * Load all existing members from server for this app, excluding all current attendees
-	 * 
-	 * @author andreasfey
+	 * add attendee to conversation
+	 * @param m
 	 */
-	private class LoadMembersTask extends AsyncTask<Void, Void, List<MemberModel>>
-	{
-		@Override
-		protected List<MemberModel> doInBackground( Void... nox )
-		{
-			try
-			{
-				StringBuffer filter = new StringBuffer( );
-				if ( MemberSelectionActivity.this.conv != null )
-				{
-					for ( String attendee : ( List<String> ) MemberSelectionActivity.this.conv.getAttendeeUserNames( ) )
-					{
-						if ( filter.length( ) > 0 )
-						{
-							filter.append( " AND " );
-						}
-						filter.append( "userName != \"" + attendee + "\"" );
+	private void addAttendee(final MemberModel m) {
+
+		List<String> userNames = MemberSelectionActivity.this.conv
+				.getAttendeeUserNames();
+		userNames.add(m.getUserName());
+		MemberSelectionActivity.this.conv.setAttendeeUserNames(userNames);
+		MemberSelectionActivity.this.conv.saveAsync(new AOMEmptyCallback() {
+
+			@SuppressWarnings("synthetic-access")
+			@Override
+			public void isDone(ApiomatRequestException exception) {
+				if (exception != null) {
+					Log.e("addAttendee", "add attendee failed");
+				}
+
+			}
+		});
+
+	}
+	/**
+	 * add attendee to existing conversation
+	 * @param m
+	 * @param conversationModel
+	 */
+	private void addAttendeeInConversation(final MemberModel m,
+			final ConversationModel conversationModel) {
+		if (conversationModel != null) {
+			final AOMEmptyCallback conversationSaveAsync = new AOMEmptyCallback() {
+
+				@Override
+				public void isDone(ApiomatRequestException exception) {
+
+					if (exception != null) {
+						Log.e("addAttendee", "add attendee failed");
+					} else {
+						Intent intent = new Intent();
+						MemberModel m = (MemberModel) MemberSelectionActivity.this.list
+								.getItemAtPosition(MemberSelectionActivity.this.position);
+						intent.putExtra(MainActivity.EXTRA_USERNAME,
+								m.getUserName());
+						setResult(RESULT_OK, intent);
+						finish();
 					}
+
 				}
-				else
-				{
-					filter.append( "userName != \"" + MemberCache.getMyself( ) + "\"" );
+			};
+			AOMEmptyCallback conversationLoadAsync = new AOMEmptyCallback() {
+
+				@SuppressWarnings("synthetic-access")
+				@Override
+				public void isDone(ApiomatRequestException exception) {
+
+					List<String> userNames = conversationModel
+							.getAttendeeUserNames();
+
+					userNames.add(m.getUserName());
+					conversationModel.setAttendeeUserNames(userNames);
+					
+					conversationModel.saveAsync(conversationSaveAsync);
+
 				}
-				MemberModel mm = new MemberModel( );
-				List<MemberModel> models =
-					Datastore.getInstance( ).loadFromServer( MemberModel.class, mm.getModuleName( ),
-						mm.getSimpleName( ), filter.toString( ) );
-				return models;
-			}
-			catch ( Exception e )
-			{
-				Log.e( "MemberAdapter", "Error loading members of app", e );
-				return null;
-			}
+			};
+			conversationModel.loadAsync(conversationLoadAsync);
+		} else {
+			Log.e("MemberSelectionActivity", "Conv is null");
 		}
+
 	}
 
-	private class AddConversationsTask extends AsyncTask<String, Void, Void>
-	{
-		@Override
-		protected Void doInBackground( String... subject )
-		{
-			try
-			{
-				MemberSelectionActivity.this.conv = new ConversationModel( );
-				MemberSelectionActivity.this.conv.setAttendeeUserNames( Arrays.asList( new String[ ] { MemberCache
-					.getMyself( ) } ) );
-				MemberSelectionActivity.this.conv.setSubject( subject[ 0 ] );
-				MemberSelectionActivity.this.conv.save( );
-			}
-			catch ( Exception e )
-			{
-				Log.e( "AddConversationsTask", "Error creating conversation", e );
-			}
-			return null;
-		}
+	/**
+	 * add a conversation
+	 * @param view
+	 * @param m
+	 */
+	private void addConversation(@SuppressWarnings("unused") View view,
+			final MemberModel m) {
+
+		AlertDialog.Builder dialog = new AlertDialog.Builder(this);
+		View popupView = getLayoutInflater().inflate(R.layout.subject_popup,
+				null);
+		final EditText subject = (EditText) popupView
+				.findViewById(R.id.subjectText);
+		dialog.setTitle(R.string.subjectpopup_text);
+
+		dialog.setPositiveButton(R.string.ok,
+				new DialogInterface.OnClickListener() {
+
+					@SuppressWarnings("synthetic-access")
+					@Override
+					public void onClick(DialogInterface dialog, int which) {
+
+						if (subject.getText().length() == 0) {
+							// dialog.dismiss();
+							AlertDialog.Builder alert = new AlertDialog.Builder(
+									MemberSelectionActivity.this);
+							alert.setCancelable(true);
+							alert.setTitle("Subject must not be empty");
+							alert.setMessage("We need a subject to create a new conversation.");
+							alert.setNegativeButton(R.string.cancel,
+									new DialogInterface.OnClickListener() {
+
+										@Override
+										public void onClick(
+												DialogInterface dialog,
+												int which) {
+											dialog.dismiss();
+
+										}
+									});
+							alert.create();
+							alert.show();
+							return;
+						}
+						MemberSelectionActivity.this.conv = new ConversationModel();
+						MemberSelectionActivity.this.conv
+								.setAttendeeUserNames(Arrays
+										.asList(new String[] { MemberCache
+												.getMyself() }));
+						MemberSelectionActivity.this.conv.setSubject(subject
+								.getText().toString());
+						MemberSelectionActivity.this.conv
+								.saveAsync(new AOMEmptyCallback() {
+
+									@Override
+									public void isDone(
+											ApiomatRequestException exception) {
+
+										if (exception == null) {
+											addAttendee(m);
+											Intent intent = new Intent(
+													MemberSelectionActivity.this,
+													SubjectActivity.class);
+											intent.putExtra(
+													MainActivity.EXTRA_CONVERSATION,
+													MemberSelectionActivity.this.conv);
+											startActivityForResult(
+													intent,
+													MainActivity.EXPECTED_SUBJECT_CODE);
+
+										}
+									}
+								});
+
+					}
+				});
+		dialog.setNegativeButton(R.string.cancel,
+				new DialogInterface.OnClickListener() {
+
+					@Override
+					public void onClick(DialogInterface dialog, int which) {
+
+						dialog.dismiss();
+					}
+				});
+		dialog.setView(popupView);
+		dialog.create();
+		dialog.show();
+
 	}
 
 }

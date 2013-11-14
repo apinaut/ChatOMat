@@ -23,20 +23,26 @@
 package com.apiomat.chatomat;
 
 import java.io.Serializable;
-import java.util.ArrayList;
+
 import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
+import android.annotation.SuppressLint;
+import android.app.ActionBar;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.os.AsyncTask;
+import android.content.res.Resources;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
+import android.view.MenuItem;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.AdapterView;
@@ -44,22 +50,33 @@ import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ListView;
 
 import com.apiomat.chatomat.adapter.ConversationAdapter;
+import com.apiomat.frontend.ApiomatRequestException;
 import com.apiomat.frontend.Datastore;
 import com.apiomat.frontend.basics.MemberModel;
+import com.apiomat.frontend.callbacks.AOMCallback;
+import com.apiomat.frontend.callbacks.AOMEmptyCallback;
+import com.apiomat.frontend.chat.ChatMessageModel;
 import com.apiomat.frontend.chat.ConversationModel;
-import com.apiomat.frontend.chat.MessageModel;
+
 
 /**
  * First screen showing a list of conversations
  * 
  * @author andreasfey
  */
-public class MainActivity extends Activity
-{
+
+@SuppressLint("NewApi")
+public class MainActivity extends Activity {
+
+	@SuppressWarnings("javadoc")
 	public static final String EXTRA_POSITION = "position";
+	@SuppressWarnings("javadoc")
 	public static final String EXTRA_CONVERSATION = "conv";
+	@SuppressWarnings("javadoc")
 	public static final String EXTRA_USERNAME = "username";
+	@SuppressWarnings("javadoc")
 	public static final String EXTRA_MEMBER = "member";
+	@SuppressWarnings("javadoc")
 	public static final String EXTRA_LAST_MESSAGE = "lastMessageText";
 
 	static final int EXPECTED_SUBJECT_CODE = 1;
@@ -68,105 +85,131 @@ public class MainActivity extends Activity
 	private ConversationAdapter adapter;
 	private Timer t;
 
+	@SuppressLint("NewApi")
 	@Override
-	public void onCreate( Bundle savedInstanceState )
-	{
-		super.onCreate( savedInstanceState );
-		setContentView( R.layout.activity_main );
+	public void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		setContentView(R.layout.activity_main);
 
-		this.adapter = new ConversationAdapter( this );
+		Resources res = getResources();
+		Bitmap bMap = BitmapFactory.decodeResource(res,
+				R.drawable.apinauts_header_clean);
+		BitmapDrawable actionBarBackground = new BitmapDrawable(res, bMap);
+		ActionBar actionBar = getActionBar();
+		actionBar.setBackgroundDrawable(actionBarBackground);
 
-		final ListView convList = ( ListView ) findViewById( R.id.conversationsList );
-		convList.setAdapter( this.adapter );
-		final ActivitySwipeDetector activitySwipeDetector = new ActivitySwipeDetector( );
-		convList.setOnTouchListener( activitySwipeDetector );
-		convList.setOnItemClickListener( new OnItemClickListener( )
-		{
+		actionBar.setTitle(R.string.action_conversations);
+
+		this.adapter = new ConversationAdapter(this);
+
+		final ListView convList = (ListView) findViewById(R.id.conversationsList);
+		convList.setAdapter(this.adapter);
+		final ActivitySwipeDetector activitySwipeDetector = new ActivitySwipeDetector();
+		convList.setOnTouchListener(activitySwipeDetector);
+		convList.setOnItemClickListener(new OnItemClickListener() {
+			@SuppressWarnings("synthetic-access")
 			@Override
-			public void onItemClick( AdapterView<?> parent, View view,
-				int position, long id )
-			{
-				if ( activitySwipeDetector.isSwipeDetected( ) )
-				{
-					deleteItem( MainActivity.this.adapter.getItem( position ) );
-				}
-				else
-				{
-					Intent intent = new Intent( parent.getContext( ), SubjectActivity.class );
-					intent.putExtra( EXTRA_CONVERSATION, ( Serializable ) convList.getAdapter( ).getItem( position ) );
-					startActivityForResult( intent, EXPECTED_SUBJECT_CODE );
+			public void onItemClick(AdapterView<?> parent, View view,
+					int position, long id) {
+				if (activitySwipeDetector.isSwipeDetected()) {
+					deleteItem(MainActivity.this.adapter.getItem(position));
+				} else {
+					Intent intent = new Intent(parent.getContext(),
+							SubjectActivity.class);
+					intent.putExtra(EXTRA_CONVERSATION, (Serializable) convList
+							.getAdapter().getItem(position));
+					startActivityForResult(intent, EXPECTED_SUBJECT_CODE);
 				}
 			}
-		} );
+		});
 
 		/* get member back from store or create a new one */
-		SharedPreferences mPrefs = getSharedPreferences( MainActivity.EXTRA_MEMBER, MODE_PRIVATE );
-		if ( !mPrefs.contains( "userName" ) || !mPrefs.contains( "password" ) ||
-			mPrefs.getString( "password", "" ) == "" )
-		{
-			Intent intent = new Intent( this, ProfileActivity.class );
-			startActivityForResult( intent, EXPECTED_PROFILE_CODE );
-		}
-		else
-		{
-			MemberCache.loadMemberToCache( mPrefs.getString( "userName", "" ), mPrefs.getString( "password", "" ) );
-			MemberCache.setMyself( mPrefs.getString( "userName", "" ) );
+		SharedPreferences mPrefs = getSharedPreferences(
+				MainActivity.EXTRA_MEMBER, MODE_PRIVATE);
+		if (!mPrefs.contains("userName") || !mPrefs.contains("password")
+				|| mPrefs.getString("password", "") == "") {
+			Intent intent = new Intent(this, ProfileActivity.class);
+			startActivityForResult(intent, EXPECTED_PROFILE_CODE);
+		} else {
+			MemberCache.loadMemberToCache(mPrefs.getString("userName", ""),
+					mPrefs.getString("password", ""));
+			MemberCache.setMyself(mPrefs.getString("userName", ""));
 		}
 	}
 
+	/**
+	 * onPause --> cancel task
+	 */
 	@Override
-	protected void onPause( )
-	{
-		super.onPause( );
-		this.t.cancel( );
+	protected void onPause() {
+		super.onPause();
+		this.t.cancel();
 	}
-
+	/**
+	 * onResume --> start task
+	 */
+	@SuppressWarnings("synthetic-access")
 	@Override
-	protected void onResume( )
-	{
-		super.onResume( );
+	protected void onResume() {
+		super.onResume();
 
-		this.t = new Timer( );
-		if ( MemberCache.getMySelf( ) != null )
-		{
+		this.t = new Timer();
+		if (MemberCache.getMySelf() != null) {
 			/* Start timer to fetch messages periodically */
-			this.t.scheduleAtFixedRate( new RefreshConversationsTimer( ), 0, 10000 );
+			this.t.scheduleAtFixedRate(new RefreshConversationsTimer(), 0,
+					10000);
+		}
+	}
+
+	@SuppressWarnings("deprecation")
+	@Override
+	protected void onActivityResult(int requestCode, int resultCode,
+			Intent intent) {
+		super.onActivityResult(requestCode, resultCode, intent);
+		if (requestCode == EXPECTED_PROFILE_CODE) {
+			if (resultCode == RESULT_OK) {
+				MemberModel memberModel = new MemberModel();
+				memberModel.setUserName(MemberCache.getMySelf().getUserName());
+				memberModel.setPassword(MemberCache.getMySelf().getPassword());
+				Datastore.configure(memberModel);
+				onResume();
+			} else if (MemberCache.getMyself() == null) {
+				MemberModel memberModel = new MemberModel();
+				memberModel.setUserName("");
+				memberModel.setPassword("");
+				Datastore.configure(memberModel);
+				this.adapter.clear();
+				AlertDialog dialog = new AlertDialog.Builder(this).create();
+				dialog.setMessage("You have to create a profile using the apinaut button before going on!");
+				dialog.show();
+			}
+		} else if (requestCode == EXPECTED_SUBJECT_CODE
+				&& resultCode == RESULT_OK) {
+			ChatMessageModel msg = (ChatMessageModel) intent.getExtras()
+					.getSerializable(EXTRA_LAST_MESSAGE);
+			this.adapter.setLastMessage(msg);
 		}
 	}
 
 	@Override
-	protected void onActivityResult( int requestCode, int resultCode, Intent intent )
-	{
-		super.onActivityResult( requestCode, resultCode, intent );
-		if ( requestCode == EXPECTED_PROFILE_CODE )
-		{
-			if ( resultCode == RESULT_OK )
-			{
-				Datastore.configure( MemberModel.baseURL, MemberModel.apiKey, MemberCache.getMySelf( ).getUserName( ),
-					MemberCache.getMySelf( ).getPassword( ) );
-				onResume( );
-			}
-			else if ( MemberCache.getMyself( ) == null )
-			{
-				Datastore.configure( MemberModel.baseURL, MemberModel.apiKey, "", "" );
-				this.adapter.clear( );
-				AlertDialog dialog = new AlertDialog.Builder( this ).create( );
-				dialog.setMessage( "You have to create a profile using the apinaut button before going on!" );
-				dialog.show( );
-			}
-		}
-		else if ( requestCode == EXPECTED_SUBJECT_CODE && resultCode == RESULT_OK )
-		{
-			MessageModel msg = ( MessageModel ) intent.getExtras( ).getSerializable( EXTRA_LAST_MESSAGE );
-			this.adapter.setLastMessage( msg );
-		}
-	}
-
-	@Override
-	public boolean onCreateOptionsMenu( Menu menu )
-	{
-		getMenuInflater( ).inflate( R.menu.activity_main, menu );
+	public boolean onCreateOptionsMenu(Menu menu) {
+		getMenuInflater().inflate(R.menu.main, menu);
 		return true;
+	}
+
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+		// Handle item selection
+		switch (item.getItemId()) {
+		case R.id.action_add_attendee:
+			addAttendee(null);
+			return true;
+		case R.id.action_profile:
+			openProfile(null);
+			return true;
+		default:
+			return super.onOptionsItemSelected(item);
+		}
 	}
 
 	/**
@@ -174,169 +217,145 @@ public class MainActivity extends Activity
 	 * 
 	 * @param view
 	 */
-	public void openProfile( @SuppressWarnings( "unused" ) View view )
-	{
-		Intent intent = new Intent( this, ProfileActivity.class );
-		startActivityForResult( intent, EXPECTED_PROFILE_CODE );
+	public void openProfile(@SuppressWarnings("unused") View view) {
+		Intent intent = new Intent(this, ProfileActivity.class);
+		startActivityForResult(intent, EXPECTED_PROFILE_CODE);
 	}
 
 	/**
 	 * Opens the list of members
-	 * 
 	 * @param view
 	 */
-	public void addAttendee( @SuppressWarnings( "unused" ) View view )
-	{
-		Intent intent = new Intent( this, MemberSelectionActivity.class );
-		startActivity( intent );
+	public void addAttendee(@SuppressWarnings("unused") View view) {
+		Intent intent = new Intent(this, MemberSelectionActivity.class);
+		startActivity(intent);
 	}
 
-	private void deleteItem( final ConversationModel model )
-	{
-		AlertDialog.Builder builder = new AlertDialog.Builder( MainActivity.this );
-		builder.setMessage( "Are you sure to delete this conversation?" );
-		builder.setPositiveButton( "Yes", new DialogInterface.OnClickListener( )
-		{
+	/**
+	 * Delete Conversation
+	 * @param model
+	 */
+	private void deleteItem(final ConversationModel model) {
+		AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+		builder.setMessage("Are you sure to delete this conversation?");
+		builder.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
 			@Override
-			public void onClick( DialogInterface dialog, int id )
-			{
-				DeleteConversationTask task = new DeleteConversationTask( );
-				task.execute( model );
-				try
-				{
-					if ( task.get( ) )
-					{
-						MainActivity.this.adapter.remove( model );
+			public void onClick(DialogInterface dialog, int id) {
+				AOMEmptyCallback conversationDeleteAsync = new AOMEmptyCallback() {
+					@SuppressWarnings("synthetic-access")
+					@Override
+					public void isDone(ApiomatRequestException exception) {
+						if (exception != null) {
+							Log.e("MainActivity", "Error deleting conversation");
+						} else {
+							MainActivity.this.adapter.remove(model);
+						}
+
 					}
-				}
-				catch ( Exception e )
-				{
-					Log.e( "MainActivity", "Error deleting conversation", e );
-				}
+				};
+				model.deleteAsync(conversationDeleteAsync);
+
 			}
-		} );
-		builder.setNegativeButton( "No", new DialogInterface.OnClickListener( )
-		{
+		});
+		builder.setNegativeButton("No", new DialogInterface.OnClickListener() {
 			@Override
-			public void onClick( DialogInterface paramDialogInterface, int paramInt )
-			{
-				paramDialogInterface.cancel( );
+			public void onClick(DialogInterface paramDialogInterface,
+					int paramInt) {
+				paramDialogInterface.cancel();
 			}
-		} );
-		AlertDialog alert = builder.create( );
-		alert.show( );
+		});
+		AlertDialog alert = builder.create();
+		alert.show();
 	}
 
-	private class LoadConversationsTask extends AsyncTask<Void, Void, List<ConversationModel>>
-	{
+	/**
+	 * refresh all conversations in a timerTask
+	 * @author Tim
+	 */
+	private class RefreshConversationsTimer extends TimerTask {
+		@SuppressWarnings("synthetic-access")
 		@Override
-		protected List<ConversationModel> doInBackground( Void... nothing )
-		{
-			try
-			{
-				return ConversationModel.getConversationModels( "" );
-			}
-			catch ( Exception e )
-			{
-				Log.e( "LoadConversationsTask", "Error loading conversations", e );
-				return new ArrayList<ConversationModel>( );
-			}
+		public void run() {
+			
+			ConversationModel.getConversationModelsAsync("",
+					MainActivity.this.conversationList);
+
 		}
 	}
+	
+	/**
+	 * Get all conversations in a list <Async Task>
+	 */
+	private AOMCallback<List<ConversationModel>> conversationList = new AOMCallback<List<ConversationModel>>() {
 
-	private class RefreshConversationsTimer extends TimerTask
-	{
+		@SuppressWarnings("synthetic-access")
 		@Override
-		public void run( )
-		{
-			LoadConversationsTask t = new LoadConversationsTask( );
-			t.execute( );
-			try
-			{
-				for ( final ConversationModel mm : t.get( ) )
-				{
+		public void isDone(
+				List<ConversationModel> resultObject,
+				ApiomatRequestException exception) {
+			if (exception == null) {
+				for (final ConversationModel mm : resultObject) {
 					boolean alreadyExists = false;
-					for ( int i = 0; i < MainActivity.this.adapter.getCount( ); i++ )
-					{
-						if ( MainActivity.this.adapter.getItem( i ).getHref( ).equals( mm.getHref( ) ) )
-						{
+					for (int i = 0; i < MainActivity.this.adapter
+							.getCount(); i++) {
+						if (MainActivity.this.adapter
+								.getItem(i).getHref()
+								.equals(mm.getHref())) {
 							alreadyExists = true;
 							break;
 						}
 					}
-					if ( !alreadyExists )
-					{
-						MainActivity.this.runOnUiThread( new Runnable( )
-						{
-							@Override
-							public void run( )
-							{
-								MainActivity.this.adapter.add( mm );
-							}
-						} );
+					if (!alreadyExists) {
+						MainActivity.this
+								.runOnUiThread(new Runnable() {
+									@Override
+									public void run() {
+										MainActivity.this.adapter
+												.add(mm);
+									}
+								});
 					}
 				}
-			}
-			catch ( Exception e )
-			{
-				Log.e( "RefreshConversationsTimer", "Error refreshing conversations", e );
+
+			} else {
+				Log.e("RefreshConversationsTimer",
+						"Error refreshing conversations");
 			}
 		}
-	}
+	};
 
-	class ActivitySwipeDetector implements View.OnTouchListener
-	{
-
+	/**
+	 * detect a swipe on a item
+	 * @author Tim
+	 */
+	class ActivitySwipeDetector implements View.OnTouchListener {
 		static final String logTag = "ActivitySwipeDetector";
 		static final int MIN_DISTANCE = 100;
 		private float downX, upX;
 		private boolean swipeDetected = false;
 
-		public final boolean isSwipeDetected( )
-		{
+		public final boolean isSwipeDetected() {
 			return this.swipeDetected;
 		}
 
 		@Override
-		public boolean onTouch( View v, MotionEvent event )
-		{
-			switch ( event.getAction( ) )
-			{
-			case MotionEvent.ACTION_DOWN:
-			{
-				this.downX = event.getX( );
+		public boolean onTouch(View v, MotionEvent event) {
+			switch (event.getAction()) {
+			case MotionEvent.ACTION_DOWN: {
+				this.downX = event.getX();
 				return true;
 			}
-			case MotionEvent.ACTION_UP:
-			{
-				this.upX = event.getX( );
+			case MotionEvent.ACTION_UP: {
+				this.upX = event.getX();
 				float deltaX = this.downX - this.upX;
 
-				this.swipeDetected = Math.abs( deltaX ) > MIN_DISTANCE && ( deltaX < 0 || deltaX > 0 );
+				this.swipeDetected = Math.abs(deltaX) > MIN_DISTANCE
+						&& (deltaX < 0 || deltaX > 0);
 				return false;
 			}
 			default:
 				return false;
 			}
 		}
-	}
-
-	private class DeleteConversationTask extends AsyncTask<ConversationModel, Void, Boolean>
-	{
-		@Override
-		protected Boolean doInBackground( ConversationModel... conversation )
-		{
-			try
-			{
-				conversation[ 0 ].delete( );
-				return true;
-			}
-			catch ( Exception e )
-			{
-				Log.e( "DeleteConversationTask", "Error deleting conversation", e );
-			}
-			return false;
-		}
-
 	}
 }

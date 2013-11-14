@@ -31,8 +31,9 @@ import android.widget.ArrayAdapter;
 
 import com.apiomat.chatomat.R;
 import com.apiomat.chatomat.views.ConversationSubjectView;
+import com.apiomat.frontend.chat.ChatMessageModel;
 import com.apiomat.frontend.chat.ConversationModel;
-import com.apiomat.frontend.chat.MessageModel;
+
 
 /**
  * Adapter for the list of conversations shown in the main activity. The items in this list are of a self-developed view
@@ -40,6 +41,7 @@ import com.apiomat.frontend.chat.MessageModel;
  * 
  * @author andreasfey
  */
+@SuppressWarnings("deprecation")
 public class ConversationAdapter extends ArrayAdapter<ConversationModel>
 {
 	ViewGroup lastParent;
@@ -71,7 +73,7 @@ public class ConversationAdapter extends ArrayAdapter<ConversationModel>
 	 * 
 	 * @param lastMessage
 	 */
-	public void setLastMessage( MessageModel lastMessage )
+	public void setLastMessage( ChatMessageModel lastMessage )
 	{
 		LayoutInflater inflater = ( ( Activity ) this.getContext( ) ).getLayoutInflater( );
 		View row = inflater.inflate( R.layout.conversation_listview, this.lastParent, false );

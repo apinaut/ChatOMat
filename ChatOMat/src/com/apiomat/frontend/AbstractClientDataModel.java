@@ -1,29 +1,27 @@
-/*
- * Copyright (c) 2012, Apinauten UG (haftungsbeschraenkt)
+/* Copyright (c) 2011-2013, Apinauten GmbH
  * All rights reserved.
  * 
- * Redistribution and use in source and binary forms, with or without modification, 
+ * Redistribution and use in source and binary forms, with or without modification,
  * are permitted provided that the following conditions are met:
- *
- *  * Redistributions of source code must retain the above copyright notice, this 
- *    list of conditions and the following disclaimer.
- *  * Redistributions in binary form must reproduce the above copyright notice, 
- *    this list of conditions and the following disclaimer in the documentation 
- *    and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
- * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED 
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. 
- * IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, 
+ * 
+ * * Redistributions of source code must retain the above copyright notice, this
+ * list of conditions and the following disclaimer.
+ * * Redistributions in binary form must reproduce the above copyright notice,
+ * this list of conditions and the following disclaimer in the documentation
+ * and/or other materials provided with the distribution.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ * ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+ * IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
  * INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, 
- * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF 
- * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE 
- * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED 
+ * BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+ * LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+ * OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
- * THIS FILE IS GENERATED AUTOMATICALLY. DON'T MODIFY IT.
- */
+ * THIS FILE IS GENERATED AUTOMATICALLY. DON'T MODIFY IT. */
 package com.apiomat.frontend;
 
 import java.io.IOException;
@@ -31,27 +29,38 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.Hashtable;
 import java.util.List;
+import java.util.Map;
+import java.util.TimeZone;
 import java.util.Vector;
 
+import com.apiomat.frontend.basics.MemberModel;
+import com.apiomat.frontend.helper.AOMTask;
 import rpc.json.me.JSONArray;
 import rpc.json.me.JSONObject;
 
+import com.apiomat.frontend.callbacks.AOMEmptyCallback;
+
 /**
  * This class defines the base class of all data models for frontend developers. All data is stored in a JSON data
- * object except the HREF of this model, originally containing the type of this model. 
+ * object except the HREF of this model, originally containing the type of this model.
  * 
  * @author andreasfey
  */
 public abstract class AbstractClientDataModel implements Serializable
 {
+    public static enum ObjectState {
+		DELETING, DELETED, PERSISTING, PERSISTED;
+	}
 	/**
 	 * The representation of the data of this model as JSON object
 	 */
 	protected JSONObject data;
 	private String href;
+	private ObjectState currentState;
 
 	/**
 	 * Constructor
@@ -59,6 +68,7 @@ public abstract class AbstractClientDataModel implements Serializable
 	@SuppressWarnings( "rawtypes" )
 	public AbstractClientDataModel( )
 	{
+		setCurrentState(ObjectState.PERSISTED);
 		this.data = new JSONObject( );
 		this.data.put( "@type", getType( ) );
 		if ( this.getSimpleName( ).equals( "MemberModel" ) && getModuleName( ).equals( "Basics" ) )
@@ -66,6 +76,17 @@ public abstract class AbstractClientDataModel implements Serializable
 			this.data.put( "dynamicAttributes", new Hashtable( ) );
 		}
 	}
+	
+ 	/**
+ 	 * Returns the system to connect to
+ 	 * 
+ 	 * @return TEST for test system, LIVE for production
+ 	 */
+	public String getSystem( )
+	{
+		return MemberModel.system;
+	}
+
 
 	/**
 	 * Returns the unique type of this data model to get identified via REST interface
@@ -74,7 +95,7 @@ public abstract class AbstractClientDataModel implements Serializable
 	 */
 	private String getType( )
 	{
-		return this.getModuleName( ) + "$" + this.getSimpleName( ) + "$" + this.getSystem( );
+		return this.getModuleName( ) + "$" + this.getSimpleName( );
 	}
 
 	/**
@@ -88,13 +109,64 @@ public abstract class AbstractClientDataModel implements Serializable
 	}
 
 	/**
+	 * Returns the foreign id for this object.
+	 * A foreign id is a NON apiomat id (like facebook/twitter id)
+	 * 
+	 * @return String the foreign id
+	 */
+	public final String getForeignId( )
+	{
+		return this.data.optString( "foreignId" );
+	}
+	
+	/**
+	 * Set the foreign id for this object.
+	 * A foreign id is a NON apiomat id (like facebook/twitter id)
+	 * 
+	 * @param foreignId the foreign id
+	 */
+	public final void setForeignId( final String foreignId)
+	{
+		this.data.put( "foreignId", foreignId );
+	}
+	
+	/**
+	 * Returns a map containing all referenced model HREFs. Use it for caching purposes.
+	 * 
+	 * @return a map containing all referenced model HREFs
+	 */
+	public final Map<String, List<String>> getRefModelHrefs( )
+	{
+		return this.data.optJSONObject( "referencedHrefs" ).getMyHashMap( );
+	}
+
+	/**
+	 * Returns HREFs of a referenced model, given by its name
+	 *
+	 * @param name
+	 * @return HREFs of a referenced model
+	 */
+	@SuppressWarnings( "unchecked" )
+	public final List<String> getRefModelHrefsForName( String name )
+	{
+		Map<String, List<String>> referencedHrefs = getRefModelHrefs( );
+		if ( referencedHrefs != null && referencedHrefs.containsKey( name ) )
+		{
+			return fromJSONArray( ( JSONArray ) referencedHrefs.get( name ) );
+		}
+		return null;
+	}
+
+	/**
 	 * Returns the date when this object was created on server side
 	 * 
 	 * @return date when this object was created on server side, NULL if it was created but not saved yet
 	 */
 	public final Date getCreatedAt( )
 	{
-		return new Date( this.data.getLong( "createdAt" ) );
+		Date d = Calendar.getInstance( TimeZone.getTimeZone( "GMT" ) ).getTime( );
+		d.setTime( this.data.optLong( "createdAt" ) );
+		return d;
 	}
 
 	/**
@@ -104,7 +176,9 @@ public abstract class AbstractClientDataModel implements Serializable
 	 */
 	public final Date getLastModifiedAt( )
 	{
-		return new Date( this.data.getLong( "lastModifiedAt" ) );
+		Date d = Calendar.getInstance( TimeZone.getTimeZone( "GMT" ) ).getTime( );
+		d.setTime( this.data.optLong( "lastModifiedAt" ) );
+		return d;
 	}
 
 	/**
@@ -132,32 +206,45 @@ public abstract class AbstractClientDataModel implements Serializable
 	public abstract String getModuleName( );
 
 	/**
-	 * Returns the system to connect to
-	 * 
-	 * @return TEST for test system, LIVE for production
+	 * @return the currentState
 	 */
-	public abstract String getSystem( );
+	public ObjectState getCurrentState() {
+		return currentState;
+	}
 
 	/**
-	 * Decodes this data model from a JSON string; used to communicate with the REST interface
+	 * @param currentState
+	 *            the currentState to set
+	 */
+	public void setCurrentState(ObjectState currentState) {
+		this.currentState = currentState;
+	}
+
+	/**
+	 * Decodes this data model from a JSON string; used to communicate with the
+	 * REST interface
 	 * 
 	 * @param jsonData
+	 * @return this object
 	 */
-	public final void fromJson( final String jsonData )
+	public final AbstractClientDataModel fromJson( final String jsonData )
 	{
 		this.data = new JSONObject( jsonData );
 		this.href = this.data.optString( "href" );
+		return this;
 	}
 
 	/**
 	 * Decodes this data model from a JSON object; used to communicate with the REST interface
 	 * 
 	 * @param jsonData
+	 * @return this object
 	 */
-	public final void fromJson( final JSONObject jsonData )
+	public final AbstractClientDataModel fromJson( final JSONObject jsonData )
 	{
 		this.data = jsonData;
 		this.href = this.data.optString( "href" );
+		return this;
 	}
 
 	/**
@@ -182,59 +269,159 @@ public abstract class AbstractClientDataModel implements Serializable
 	}
 
 	/**
-	 * Saves this data model. It is - based on HREF - automatically determined, if this model exists on the server,
-	 * leading to an update, or not, leading to an post command.
+	 * Saves this data model. It is - based on HREF - automatically determined,
+	 * if this model exists on the server, leading to an update, or not, leading
+	 * to an post command.
 	 * 
-	 * @return TRUE if save operations was successful
+	 * @throws ApiomatRequestException
 	 */
-	public final boolean save( ) throws Exception
+	public void save() throws ApiomatRequestException
 	{
-		boolean ret;
-
+		setCurrentState(ObjectState.PERSISTING);
 		if ( this.href == null )
 		{
 			final String location = Datastore.getInstance( ).postOnServer( this );
 			this.href = location;
-			ret = location != null;
 		}
 		else
 		{
-			ret = Datastore.getInstance( ).updateOnServer( this );
+			Datastore.getInstance( ).updateOnServer( this );
 		}
 
 		/* fetch server-side values */
 		load( );
-
-		return ret;
+		setCurrentState(ObjectState.PERSISTED);
 	}
+
+	/**
+	 * Saves the object in background and not on the UI thread
+	 * 
+	 * @param callback
+	 *            The method which will called when saving is finished
+	 */
+	public void saveAsync(AOMEmptyCallback callback) {
+		// Check if current object is in persisting process
+		if (getCurrentState().equals(ObjectState.PERSISTING))
+		{
+			throw new IllegalStateException(
+					"Object is in persisting process. Please try again later");
+		}
+		AOMTask<Void> task = new AOMTask<Void>() {
+			@Override
+			public Void doRequest() throws ApiomatRequestException {
+				AbstractClientDataModel.this.save();
+				return null;
+			}
+		};
+		task.execute(callback);
+	}
+
 
 	/**
 	 * Loads (updates) this data model with server values
+	 * 
+	 * @throws ApiomatRequestException
 	 */
-	public final void load( ) throws Exception
+	public final void load() throws ApiomatRequestException
 	{
-		Datastore.getInstance( ).loadFromServer( this, this.getHref( ) );
+		load(null);
 	}
 
 	/**
-	 * Loads (updates) this data model with server values. Since you have to pass the HREF for this method, only use it
-	 * when loading a model which has no HREF in it (was not sent/loaded before). Else use {@link #load()}
+	 * Loads (updates) this data model with server values. Since you have to
+	 * pass the HREF for this method, only use it when loading a model which has
+	 * no HREF in it (was not sent/loaded before). Else use {@link #load()}
 	 * 
-	 * @param href The HREF of this model
+	 * @param href
+	 *            The HREF of this model
+	 * @throws ApiomatRequestException
 	 */
-	public final void load( final String href ) throws Exception
+	public final void load(final String href) throws ApiomatRequestException
 	{
-		Datastore.getInstance( ).loadFromServer( this, href );
-		this.href = this.data.optString( "href" , null);
+		Datastore.getInstance().loadFromServer(this,
+				href == null ? this.getHref() : href);
+		// Set href only if was given
+		if (href != null) {
+			this.href = this.data.optString( "href", null );
+		}
+	}
+
+	/**
+	 * Loads (updates) in background this data model with server values
+	 * 
+	 * @param callback
+	 *            The callback method which will called when request is finished
+	 */
+	public final void loadAsync(
+			final AOMEmptyCallback callback) {
+
+		loadAsync(null, callback);
+	}
+
+	/**
+	 * Loads (updates) this data model with server values in background. Since
+	 * you have to pass the HREF for this method, only use it when loading a
+	 * model which has no HREF in it (was not sent/loaded before). Else use
+	 * {@link #loadAsync(AOMEmptyCallback callback)}
+     *
+     * Throws an IllegalStateException if object is in persisting process
+	 * 
+	 * @param href
+	 *            The HREF of this model
+	 * @param callback
+	 *            The callback method which will called when request is finished
+	 */
+	public final void loadAsync(final String href,
+			final AOMEmptyCallback callback) {
+
+        if(currentState.equals(ObjectState.PERSISTING))
+        {
+            throw new IllegalStateException(
+                    "Object is in persisting process. Please try again later");
+        }
+		AOMTask<Void> reqTask = new AOMTask<Void>() {
+			@Override
+			public Void doRequest()
+					throws ApiomatRequestException {
+				AbstractClientDataModel.this.load(href);
+				return null;
+			}
+		};
+		reqTask.execute(callback);
 	}
 
 	/**
 	 * Deletes this data model on server
+	 * 
+	 * @throws Exception
 	 */
-	public final void delete( ) throws Exception
+	public final void delete( ) throws ApiomatRequestException
 	{
 		Datastore.getInstance( ).deleteOnServer( this );
+        setCurrentState(ObjectState.DELETED);
 	}
+
+    /**
+     * Deletes this data model on server in background task
+     *
+     * @param callback Callback method which is called after deletion was finished on server
+     */
+    public void deleteAsync(AOMEmptyCallback callback) {
+        // Check if current object is in persisting process
+        if (getCurrentState().equals(ObjectState.DELETING))
+        {
+            throw new IllegalStateException(
+                    "Object is in deleting process. Please try again later");
+        }
+        AOMTask<Void> task = new AOMTask<Void>() {
+            @Override
+            public Void doRequest() throws ApiomatRequestException {
+                AbstractClientDataModel.this.delete();
+                return null;
+            }
+        };
+        task.execute(callback);
+    }
 
 	/**
 	 * Helper method to convert a JSON array to a list
@@ -291,18 +478,16 @@ public abstract class AbstractClientDataModel implements Serializable
 
 		return returnValue;
 	}
-	
+
 	private void readObject( ObjectInputStream ois )
-		throws IOException
-	{
+			throws IOException
+			{
 		fromJson( ois.readUTF( ) );
-		href = ois.readUTF( );
-	}
+			}
 
 	private void writeObject( ObjectOutputStream ois )
-		throws IOException
-	{
+			throws IOException
+			{
 		ois.writeUTF( toJson( ) );
-		ois.writeUTF( href); 
-	}
+			}
 }

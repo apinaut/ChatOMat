@@ -2,40 +2,15 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="fill_parent"
     android:layout_height="fill_parent"
-    android:background="#000000"
     android:orientation="vertical"
-    android:padding="10dip" >
-
-    <TextView
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:gravity="center_horizontal"
-        android:text="@string/subjectpopup_text" />
+    android:padding="10dip" 
+    android:id="@+id/subjectPopup"
+    >
 
     <EditText
         android:id="@+id/subjectText"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:inputType="textAutoComplete" />
-
-    <LinearLayout
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal" >
-
-        <Button
-            android:id="@+id/subjectTextCancel"
-            android:layout_width="0dip"
-            android:layout_height="wrap_content"
-            android:layout_weight=".5"
-            android:text="@string/cancel" />
-
-        <Button
-            android:id="@+id/subjectTextOK"
-            android:layout_width="0dip"
-            android:layout_height="wrap_content"
-            android:layout_weight=".5"
-            android:text="@string/ok" />
-    </LinearLayout>
 
 </LinearLayout>
