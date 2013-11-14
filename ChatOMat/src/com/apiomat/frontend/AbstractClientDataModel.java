@@ -24,6 +24,10 @@
  * THIS FILE IS GENERATED AUTOMATICALLY. DON'T MODIFY IT. */
 package com.apiomat.frontend;
 
+import com.apiomat.frontend.basics.MemberModel;
+import com.apiomat.frontend.callbacks.AOMEmptyCallback;
+import com.apiomat.frontend.helper.AOMTask;
+
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -31,18 +35,16 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TimeZone;
 import java.util.Vector;
 
-import com.apiomat.frontend.basics.MemberModel;
-import com.apiomat.frontend.helper.AOMTask;
 import rpc.json.me.JSONArray;
 import rpc.json.me.JSONObject;
-
-import com.apiomat.frontend.callbacks.AOMEmptyCallback;
 
 /**
  * This class defines the base class of all data models for frontend developers. All data is stored in a JSON data
@@ -52,14 +54,11 @@ import com.apiomat.frontend.callbacks.AOMEmptyCallback;
  */
 public abstract class AbstractClientDataModel implements Serializable
 {
-    public static enum ObjectState {
-		DELETING, DELETED, PERSISTING, PERSISTED;
-	}
 	/**
 	 * The representation of the data of this model as JSON object
 	 */
 	protected JSONObject data;
-	private String href;
+	protected String href;
 	private ObjectState currentState;
 
 	/**
@@ -68,25 +67,80 @@ public abstract class AbstractClientDataModel implements Serializable
 	@SuppressWarnings( "rawtypes" )
 	public AbstractClientDataModel( )
 	{
-		setCurrentState(ObjectState.PERSISTED);
 		this.data = new JSONObject( );
 		this.data.put( "@type", getType( ) );
-		if ( this.getSimpleName( ).equals( "MemberModel" ) && getModuleName( ).equals( "Basics" ) )
+		if ( ( this.getSimpleName( ).equals( "MemberModel" ) || this.getSimpleName( ).equals( "User" ) )  && getModuleName( ).equals( "Basics" ) )
 		{
 			this.data.put( "dynamicAttributes", new Hashtable( ) );
 		}
+		setCurrentState( ObjectState.PERSISTED );
 	}
-	
- 	/**
- 	 * Returns the system to connect to
- 	 * 
- 	 * @return TEST for test system, LIVE for production
- 	 */
+
+	/**
+	 * Helper method to convert a JSON array to a list
+	 * 
+	 * @param array
+	 * @return a list containing all elements of the JSON array
+	 */
+	@SuppressWarnings( { "rawtypes", "unchecked" } )
+	protected static List fromJSONArray( JSONArray array )
+	{
+		List l = new ArrayList( );
+		for ( int i = 0; i < array.length( ); i++ )
+		{
+			l.add( array.get( i ) );
+		}
+		return l;
+	}
+
+	/**
+	 * Helper method to convert a list to a vector
+	 * 
+	 * @param list
+	 * @return a vector containing all elements of the list
+	 */
+	@SuppressWarnings( { "rawtypes", "unchecked" } )
+	protected static Vector toVector( List list )
+	{
+		Vector v = new Vector( );
+		for ( Object o : list )
+		{
+			v.add( o );
+		}
+		return v;
+	}
+
+	/**
+	 * Converts a number to double
+	 * 
+	 * @param number
+	 * @return double value; 0 if number is not either Integer or Double
+	 */
+	protected static double convertNumberToDouble( final Object number )
+	{
+		double returnValue = 0.0d;
+
+		if ( number instanceof Integer )
+		{
+			returnValue = ( ( Integer ) number ).doubleValue( );
+		}
+		else if ( number instanceof Double )
+		{
+			returnValue = ( ( Double ) number ).doubleValue( );
+		}
+
+		return returnValue;
+	}
+
+	/**
+	 * Returns the system to connect to
+	 * 
+	 * @return TEST for test system, LIVE for production
+	 */
 	public String getSystem( )
 	{
 		return MemberModel.system;
 	}
-
 
 	/**
 	 * Returns the unique type of this data model to get identified via REST interface
@@ -118,18 +172,131 @@ public abstract class AbstractClientDataModel implements Serializable
 	{
 		return this.data.optString( "foreignId" );
 	}
-	
+
 	/**
 	 * Set the foreign id for this object.
 	 * A foreign id is a NON apiomat id (like facebook/twitter id)
 	 * 
 	 * @param foreignId the foreign id
 	 */
-	public final void setForeignId( final String foreignId)
+	public final void setForeignId( final String foreignId )
 	{
 		this.data.put( "foreignId", foreignId );
 	}
-	
+
+	/**
+	 * Returns a boolean value if the access to resources is restricted by the defined roles for this object
+	 * 
+	 * @return boolean value if the access to resources is restricted
+	 */
+	public final boolean getRestrictResourceAccess( )
+	{
+		return this.data.optBoolean( "restrictResourceAccess" );
+	}
+
+	/**
+	 * Sets if the access to resources is restricted by the defined roles for this object
+	 * 
+	 * @param restrictResourceAccess boolean value if the access to resources is restricted
+	 */
+	public final void setRestrictResourceAccess( boolean restrictResourceAccess )
+	{
+		this.data.put( "restrictResourceAccess", restrictResourceAccess );
+	}
+
+	/**
+	 * Returns a set of all role names allowed to grant privileges on this object
+	 * 
+	 * @return set of all roles allowed to grant privileges on this object
+	 */
+	public final Set<String> getAllowedRolesGrant( )
+	{
+		JSONArray array = this.data.optJSONArray( "allowedRolesGrant" );
+		Set<String> ret = new HashSet<String>( );
+		for ( int i = 0; i < array.length( ); i++ )
+		{
+			ret.add( array.getString( i ) );
+		}
+		return ret;
+	}
+
+	/**
+	 * Sets the set of all role names allowed to write this object
+	 * 
+	 * @param allowedRolesGrant role names allowed to write this object
+	 */
+	public final void setAllowedRolesGrant( final Set<String> allowedRolesGrant )
+	{
+		JSONArray array = new JSONArray( );
+		for ( String roleName : allowedRolesGrant )
+		{
+			array.put( roleName );
+		}
+		this.data.put( "allowedRolesGrant", array );
+	}
+
+	/**
+	 * Returns a set of all role names allowed to write this object
+	 * 
+	 * @return set of all roles allowed to write this object
+	 */
+	public final Set<String> getAllowedRolesWrite( )
+	{
+		JSONArray array = this.data.optJSONArray( "allowedRolesWrite" );
+		Set<String> ret = new HashSet<String>( );
+		for ( int i = 0; i < array.length( ); i++ )
+		{
+			ret.add( array.getString( i ) );
+		}
+		return ret;
+	}
+
+	/**
+	 * Sets the set of all role names allowed to write this object
+	 * 
+	 * @param allowedRolesWrite role names allowed to write this object
+	 */
+	public final void setAllowedRolesWrite( final Set<String> allowedRolesWrite )
+	{
+		JSONArray array = new JSONArray( );
+		for ( String roleName : allowedRolesWrite )
+		{
+			array.put( roleName );
+		}
+		this.data.put( "allowedRolesWrite", array );
+	}
+
+	/**
+	 * Returns a set of all role names allowed to read this object
+	 * 
+	 * @return set of all roles allowed for this object
+	 */
+	public final Set<String> getAllowedRolesRead( )
+	{
+		JSONArray array = this.data.optJSONArray( "allowedRolesRead" );
+		Set<String> ret = new HashSet<String>( );
+		for ( int i = 0; i < array.length( ); i++ )
+		{
+			ret.add( array.getString( i ) );
+		}
+		return ret;
+	}
+
+	/**
+	 * Sets the set of all role names allowed to read this object
+	 * 
+	 * @param allowedRolesRead names allowed to read this object
+	 */
+	public final void setAllowedRolesRead( final Set<String> allowedRolesRead )
+	{
+		JSONArray array = new JSONArray( );
+		for ( String roleName : allowedRolesRead )
+		{
+			array.put( roleName );
+		}
+		this.data.put( "allowedRolesRead", array );
+	}
+
 	/**
 	 * Returns a map containing all referenced model HREFs. Use it for caching purposes.
 	 * 
@@ -142,7 +309,7 @@ public abstract class AbstractClientDataModel implements Serializable
 
 	/**
 	 * Returns HREFs of a referenced model, given by its name
-	 *
+	 * 
 	 * @param name
 	 * @return HREFs of a referenced model
 	 */
@@ -208,15 +375,17 @@ public abstract class AbstractClientDataModel implements Serializable
 	/**
 	 * @return the currentState
 	 */
-	public ObjectState getCurrentState() {
-		return currentState;
+	public ObjectState getCurrentState( )
+	{
+		return this.currentState;
 	}
 
 	/**
 	 * @param currentState
-	 *            the currentState to set
+	 *        the currentState to set
 	 */
-	public void setCurrentState(ObjectState currentState) {
+	public void setCurrentState( ObjectState currentState )
+	{
 		this.currentState = currentState;
 	}
 
@@ -255,7 +424,7 @@ public abstract class AbstractClientDataModel implements Serializable
 	public final String toJson( )
 	{
 		String json = "";
-		if ( getHref( ) != null )
+		if ( getHref( ) != null && getHref( ).length( ) > 0 )
 		{
 			this.data.put( "id", getHref( ).substring( getHref( ).lastIndexOf( "/" ) + 1 ) );
 			json = this.data.toString( );
@@ -273,58 +442,91 @@ public abstract class AbstractClientDataModel implements Serializable
 	 * if this model exists on the server, leading to an update, or not, leading
 	 * to an post command.
 	 * 
-	 * @throws ApiomatRequestException
+	 * @throws com.apiomat.frontend.ApiomatRequestException
 	 */
-	public void save() throws ApiomatRequestException
+	public void save( ) throws ApiomatRequestException
 	{
-		setCurrentState(ObjectState.PERSISTING);
+		setCurrentState( ObjectState.PERSISTING );
+		boolean wasLocalSave = false;
 		if ( this.href == null )
 		{
-			final String location = Datastore.getInstance( ).postOnServer( this );
-			this.href = location;
+			if ( Datastore.getInstance( ).sendOffline( "POST" ) )
+			{
+				final String sendHREF = Datastore.getInstance( ).createModelHref( getModuleName( ), getSimpleName( ) );
+				String location = Datastore.getInstance( ).getOfflineHandler( ).addTask( "POST", sendHREF, this, null );
+				wasLocalSave = true;
+				if ( location != null )
+				{
+					this.href = location;
+				}
+			}
+			else
+			{
+				String location = Datastore.getInstance( ).postOnServer( this );
+				this.href = location;
+			}
+
 		}
 		else
 		{
-			Datastore.getInstance( ).updateOnServer( this );
+			if ( Datastore.getInstance( ).sendOffline( "PUT" ) )
+			{
+				Datastore.getInstance( ).getOfflineHandler( ).addTask( "PUT", getHref( ), this, null );
+				wasLocalSave = true;
+			}
+			else
+			{
+				Datastore.getInstance( ).updateOnServer( this );
+			}
 		}
+		this.setOffline( wasLocalSave );
 
 		/* fetch server-side values */
-		load( );
-		setCurrentState(ObjectState.PERSISTED);
+		if ( wasLocalSave == false )
+		{
+			load( );
+			setCurrentState( ObjectState.PERSISTED );
+		}
+		else
+		{
+			setCurrentState( ObjectState.LOCAL_PERSISTED );
+		}
 	}
 
 	/**
 	 * Saves the object in background and not on the UI thread
 	 * 
 	 * @param callback
-	 *            The method which will called when saving is finished
+	 *        The method which will called when saving is finished
 	 */
-	public void saveAsync(AOMEmptyCallback callback) {
+	public void saveAsync( AOMEmptyCallback callback )
+	{
 		// Check if current object is in persisting process
-		if (getCurrentState().equals(ObjectState.PERSISTING))
+		if ( getCurrentState( ).equals( ObjectState.PERSISTING ) )
 		{
 			throw new IllegalStateException(
-					"Object is in persisting process. Please try again later");
+				"Object is in persisting process. Please try again later" );
 		}
-		AOMTask<Void> task = new AOMTask<Void>() {
+		AOMTask<Void> task = new AOMTask<Void>( )
+		{
 			@Override
-			public Void doRequest() throws ApiomatRequestException {
-				AbstractClientDataModel.this.save();
+			public Void doRequest( ) throws ApiomatRequestException
+			{
+				AbstractClientDataModel.this.save( );
 				return null;
 			}
 		};
-		task.execute(callback);
+		task.execute( callback );
 	}
-
 
 	/**
 	 * Loads (updates) this data model with server values
 	 * 
-	 * @throws ApiomatRequestException
+	 * @throws com.apiomat.frontend.ApiomatRequestException
 	 */
-	public final void load() throws ApiomatRequestException
+	public final void load( ) throws ApiomatRequestException
 	{
-		load(null);
+		load( null );
 	}
 
 	/**
@@ -333,15 +535,16 @@ public abstract class AbstractClientDataModel implements Serializable
 	 * no HREF in it (was not sent/loaded before). Else use {@link #load()}
 	 * 
 	 * @param href
-	 *            The HREF of this model
-	 * @throws ApiomatRequestException
+	 *        The HREF of this model
+	 * @throws com.apiomat.frontend.ApiomatRequestException
 	 */
-	public final void load(final String href) throws ApiomatRequestException
+	public final void load( final String href ) throws ApiomatRequestException
 	{
-		Datastore.getInstance().loadFromServer(this,
-				href == null ? this.getHref() : href);
+		Datastore.getInstance( ).loadFromServer( this,
+			href == null ? this.getHref( ) : href );
 		// Set href only if was given
-		if (href != null) {
+		if ( href != null )
+		{
 			this.href = this.data.optString( "href", null );
 		}
 	}
@@ -350,44 +553,48 @@ public abstract class AbstractClientDataModel implements Serializable
 	 * Loads (updates) in background this data model with server values
 	 * 
 	 * @param callback
-	 *            The callback method which will called when request is finished
+	 *        The callback method which will called when request is finished
 	 */
 	public final void loadAsync(
-			final AOMEmptyCallback callback) {
+		final AOMEmptyCallback callback )
+	{
 
-		loadAsync(null, callback);
+		loadAsync( null, callback );
 	}
 
 	/**
 	 * Loads (updates) this data model with server values in background. Since
 	 * you have to pass the HREF for this method, only use it when loading a
 	 * model which has no HREF in it (was not sent/loaded before). Else use
-	 * {@link #loadAsync(AOMEmptyCallback callback)}
-     *
-     * Throws an IllegalStateException if object is in persisting process
+	 * {@link #loadAsync(com.apiomat.frontend.callbacks.AOMEmptyCallback callback)}
+	 * 
+	 * Throws an IllegalStateException if object is in persisting process
 	 * 
 	 * @param href
-	 *            The HREF of this model
+	 *        The HREF of this model
 	 * @param callback
-	 *            The callback method which will called when request is finished
+	 *        The callback method which will called when request is finished
 	 */
-	public final void loadAsync(final String href,
-			final AOMEmptyCallback callback) {
+	public final void loadAsync( final String href,
+		final AOMEmptyCallback callback )
+	{
 
-        if(currentState.equals(ObjectState.PERSISTING))
-        {
-            throw new IllegalStateException(
-                    "Object is in persisting process. Please try again later");
-        }
-		AOMTask<Void> reqTask = new AOMTask<Void>() {
+		if ( currentState.equals( ObjectState.PERSISTING ) )
+		{
+			throw new IllegalStateException(
+				"Object is in persisting process. Please try again later" );
+		}
+		AOMTask<Void> reqTask = new AOMTask<Void>( )
+		{
 			@Override
-			public Void doRequest()
-					throws ApiomatRequestException {
-				AbstractClientDataModel.this.load(href);
+			public Void doRequest( )
+				throws ApiomatRequestException
+			{
+				AbstractClientDataModel.this.load( href );
 				return null;
 			}
 		};
-		reqTask.execute(callback);
+		reqTask.execute( callback );
 	}
 
 	/**
@@ -397,97 +604,78 @@ public abstract class AbstractClientDataModel implements Serializable
 	 */
 	public final void delete( ) throws ApiomatRequestException
 	{
-		Datastore.getInstance( ).deleteOnServer( this );
-        setCurrentState(ObjectState.DELETED);
-	}
-
-    /**
-     * Deletes this data model on server in background task
-     *
-     * @param callback Callback method which is called after deletion was finished on server
-     */
-    public void deleteAsync(AOMEmptyCallback callback) {
-        // Check if current object is in persisting process
-        if (getCurrentState().equals(ObjectState.DELETING))
-        {
-            throw new IllegalStateException(
-                    "Object is in deleting process. Please try again later");
-        }
-        AOMTask<Void> task = new AOMTask<Void>() {
-            @Override
-            public Void doRequest() throws ApiomatRequestException {
-                AbstractClientDataModel.this.delete();
-                return null;
-            }
-        };
-        task.execute(callback);
-    }
-
-	/**
-	 * Helper method to convert a JSON array to a list
-	 * 
-	 * @param array
-	 * @return a list containing all elements of the JSON array
-	 */
-	@SuppressWarnings( { "rawtypes", "unchecked" } )
-	protected static List fromJSONArray( JSONArray array )
-	{
-		List l = new ArrayList( );
-		for ( int i = 0; i < array.length( ); i++ )
+		if ( Datastore.getInstance( ).sendOffline( "DELETE" ) )
 		{
-			l.add( array.get( i ) );
+			Datastore.getInstance( ).getOfflineHandler( ).addTask( "DELETE", getHref( ), this, null );
+			setCurrentState( ObjectState.LOCAL_DELETED );
 		}
-		return l;
+		else
+		{
+			Datastore.getInstance( ).deleteOnServer( this );
+			setCurrentState( ObjectState.DELETED );
+		}
 	}
 
 	/**
-	 * Helper method to convert a list to a vector
+	 * Deletes this data model on server in background task
 	 * 
-	 * @param list
-	 * @return a vector containing all elements of the list
+	 * @param callback Callback method which is called after deletion was finished on server
 	 */
-	@SuppressWarnings( { "rawtypes", "unchecked" } )
-	protected static Vector toVector( List list )
+	public void deleteAsync( AOMEmptyCallback callback )
 	{
-		Vector v = new Vector( );
-		for ( Object o : list )
+		// Check if current object is in persisting process
+		if ( getCurrentState( ).equals( ObjectState.DELETING ) )
 		{
-			v.add( o );
+			throw new IllegalStateException(
+				"Object is in deleting process. Please try again later" );
 		}
-		return v;
-	}
-
-	/**
-	 * Converts a number to double
-	 * 
-	 * @param number
-	 * @return double value; 0 if number is not either Integer or Double
-	 */
-	protected static double convertNumberToDouble( final Object number )
-	{
-		double returnValue = 0.0d;
-
-		if ( number instanceof Integer )
+		AOMTask<Void> task = new AOMTask<Void>( )
 		{
-			returnValue = ( ( Integer ) number ).doubleValue( );
-		}
-		else if ( number instanceof Double )
-		{
-			returnValue = ( ( Double ) number ).doubleValue( );
-		}
-
-		return returnValue;
+			@Override
+			public Void doRequest( ) throws ApiomatRequestException
+			{
+				AbstractClientDataModel.this.delete( );
+				return null;
+			}
+		};
+		task.execute( callback );
 	}
 
 	private void readObject( ObjectInputStream ois )
-			throws IOException
-			{
+		throws IOException
+	{
 		fromJson( ois.readUTF( ) );
-			}
+	}
 
 	private void writeObject( ObjectOutputStream ois )
-			throws IOException
-			{
+		throws IOException
+	{
 		ois.writeUTF( toJson( ) );
-			}
+	}
+
+	public boolean isOffline( )
+	{
+		return this.data.optBoolean( "isOffline", false );
+	}
+
+	public void setOffline( boolean offline )
+	{
+		this.data.put( "isOffline", offline );
+	}
+
+	public String getID( )
+	{
+		String id = this.data.optString( "id", null );
+		if ( id == null )
+		{
+			/* extract from HREF */
+			id = getHref( ).substring( getHref( ).lastIndexOf( "/" ) + 1 );
+		}
+		return id;
+	}
+
+	public static enum ObjectState
+	{
+		DELETING, DELETED, PERSISTING, PERSISTED, LOCAL_PERSISTED, LOCAL_DELETED;
+	}
 }

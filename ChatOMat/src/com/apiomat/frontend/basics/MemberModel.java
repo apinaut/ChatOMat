@@ -38,12 +38,13 @@ import rpc.json.me.*;
 /**
 * Generated default class representing a user in your app 
 */
+@Deprecated
 public class MemberModel extends AbstractClientDataModel
 {
     public static final String apiKey = "9160863907729554565";
     public static final String baseURL = "https://apiomat.org/yambas/rest/apps/ChatOMatAsync";
     public static final String system = "LIVE";
-    public static final String sdkVersion = "1.2-24";
+    public static final String sdkVersion = "1.7-69";
     /**
     * Default constructor. Needed for internal processing.
     */
@@ -73,7 +74,8 @@ public class MemberModel extends AbstractClientDataModel
     */
     public String getSystem( )
     {
-        return MemberModel.system;
+
+        return system;
     }
 
     
@@ -122,6 +124,11 @@ public class MemberModel extends AbstractClientDataModel
         loadAsync("models/me", callback);
     }
     
+    /**
+    * Saves this data model. If it has no HREF this leads to a post and the model 
+    * is created on the server, else it is updated. After the save a load will
+    * be called to load the actual object from the server. 
+    */
     @Override
     public void save() throws ApiomatRequestException 
     {
@@ -129,16 +136,69 @@ public class MemberModel extends AbstractClientDataModel
         super.save();
     }
     
+    /**
+    * Saves this data model. If it has no HREF this leads to a post and the model 
+    * is created on the server, else it is updated. After the save a load will
+    * be called to load the actual object from the server. 
+    */
     public void saveAsync( final AOMEmptyCallback callback )
     {
         initDatastoreWithMembersCredentialsIfNeeded();
         super.saveAsync(callback);
     }
+
+    /**
+    * Requests a new password; user will receive an email to confirm
+    */
+    public void requestNewPassword( )
+    {
+        AOMCallback<String> cb = new AOMCallback<String>() {
+            @Override
+            public void isDone(String refHref, ApiomatRequestException ex) {
+            }
+        };
+        Datastore.getInstance( ).postOnServerAsync(this, "models/requestResetPassword/", cb );
+    }
+    
+    /**
+    * Reset password 
+    * @param newPassword the new password
+    */
+    public void resetPassword( String newPassword ) throws ApiomatRequestException
+    {
+        this.setPassword( newPassword );
+        Datastore.getInstance( ).updateOnServer( this );
+        Datastore.configure(baseURL, apiKey, this.getUserName(), this.getPassword(), sdkVersion, system);
+    }
+
+    /**
+    * Reset password asynchronously
+    * @param newPassword the new password
+    */
+    public void resetPasswordAsync( final String newPassword, final AOMEmptyCallback callback ) throws ApiomatRequestException
+    {
+        if ( getCurrentState( ).equals( ObjectState.PERSISTING ) )
+        {
+            throw new IllegalStateException(
+                "Object is in persisting process. Please try again later" );
+        }
+        AOMTask<Void> task = new AOMTask<Void>( )
+        {
+            @Override
+            public Void doRequest( ) throws ApiomatRequestException
+            {
+                resetPassword( newPassword );
+                return null;
+            }
+        };
+        task.execute( callback );
+    }
+
     /**
     * Returns a list of objects of this class filtered by the given query from server
     * @query a query filtering the results in SQL style (@see <a href="http://doc.apiomat.com">documentation</a>)
     */
-    public static final List<MemberModel> getMemberModels( String query ) throws Exception
+    public static final List<MemberModel> getMemberModels( String query ) throws ApiomatRequestException
     {
         MemberModel o = new MemberModel();
         return Datastore.getInstance( ).loadFromServer( MemberModel.class, o.getModuleName( ),
@@ -184,7 +244,34 @@ public class MemberModel extends AbstractClientDataModel
         Datastore.getInstance().loadFromServerAsync(MemberModel.class,o.getModuleName(), o.getSimpleName(), withReferencedHrefs, query, listAOMCallback);
     }
 
-    public String getSex()
+
+        public String getProfession()
+    {
+        if(this.data.optJSONObject( "dynamicAttributes" ).isNull( "profession" ))
+        {
+            return null;
+        }
+        return (String)this.data.optJSONObject( "dynamicAttributes" ).get( "profession" );
+    }
+
+    public void setProfession( String arg )
+    {
+        String profession = arg;
+        this.data.optJSONObject( "dynamicAttributes" ).put( "profession",  profession );
+    }
+
+        public String getPassword()
+    {
+         return this.data.optString( "password" );
+    }
+
+    public void setPassword( String arg )
+    {
+        String password = arg;
+        this.data.put( "password", password );
+    }
+
+        public String getSex()
     {
         if(this.data.optJSONObject( "dynamicAttributes" ).isNull( "sex" ))
         {
@@ -198,37 +285,8 @@ public class MemberModel extends AbstractClientDataModel
         String sex = arg;
         this.data.optJSONObject( "dynamicAttributes" ).put( "sex",  sex );
     }
-    public String getFirstName()
-    {
-         return this.data.optString( "firstName" );
-    }
 
-    public void setFirstName( String arg )
-    {
-        String firstName = arg;
-        this.data.put( "firstName", firstName );
-    }
-    public String getLastName()
-    {
-         return this.data.optString( "lastName" );
-    }
-
-    public void setLastName( String arg )
-    {
-        String lastName = arg;
-        this.data.put( "lastName", lastName );
-    }
-    public String getPassword()
-    {
-         return this.data.optString( "password" );
-    }
-
-    public void setPassword( String arg )
-    {
-        String password = arg;
-        this.data.put( "password", password );
-    }
-    public Map getDynamicAttributes()
+        public Map getDynamicAttributes()
     {
         return this.data.optJSONObject( "dynamicAttributes" ).getMyHashMap( );
     }
@@ -245,7 +303,245 @@ public class MemberModel extends AbstractClientDataModel
         }
         this.data.optJSONObject( "dynamicAttributes" ).getMyHashMap( ).putAll(map);
     }
-    public double getLocLatitude( )
+
+        public String getLastName()
+    {
+         return this.data.optString( "lastName" );
+    }
+
+    public void setLastName( String arg )
+    {
+        String lastName = arg;
+        this.data.put( "lastName", lastName );
+    }
+
+        public String getFirstName()
+    {
+         return this.data.optString( "firstName" );
+    }
+
+    public void setFirstName( String arg )
+    {
+        String firstName = arg;
+        this.data.put( "firstName", firstName );
+    }
+
+        public Date getDateOfBirth( )
+    {
+        return new Date( this.data.getLong( "dateOfBirth" ) );
+    }
+
+    public void setDateOfBirth( Date dateOfBirth )
+    {
+        this.data.putOpt( "dateOfBirth", dateOfBirth.getTime( ) );
+    }
+
+
+        public String getUserName()
+    {
+         return this.data.optString( "userName" );
+    }
+
+    public void setUserName( String arg )
+    {
+        String userName = arg;
+        this.data.put( "userName", userName );
+    }
+
+    
+    /**
+    * Returns the URL of the resource.
+    * @return the URL of the resource
+    */
+    public String getImageURL()
+    {
+        if(this.data.optJSONObject( "dynamicAttributes" ).isNull( "imageURL" ))
+        {
+            return null;
+        }
+        return (String)this.data.optJSONObject( "dynamicAttributes" ).get( "imageURL" ) 
+            + ".img?apiKey=" + User.apiKey + "&system=" + this.getSystem();
+    }
+
+    public String postImage( byte[] data ) throws Exception
+    {
+        String href = null;
+        if(Datastore.getInstance().sendOffline("POST"))
+        {
+            final String sendHREF = Datastore.getInstance().createStaticDataHref(true);
+            href = Datastore.getInstance().getOfflineHandler().addTask("POST", sendHREF, data);
+        }
+        else
+        {
+            href = Datastore.getInstance( ).postStaticDataOnServer( data, true);
+        }
+        
+        if(href != null && href.length() > 0)
+        {
+            this.data.optJSONObject( "dynamicAttributes" ).put( "imageURL",  href );
+            this.save();
+        }
+        return href;
+    }
+    
+    public void postImageAsync( final byte[] data, final AOMEmptyCallback _callback )
+    {
+        AOMCallback<String> cb = new AOMCallback<String>() {
+            @Override
+            public void isDone(String href, ApiomatRequestException ex) {
+                if(ex == null && href!=null && href.length()>0)
+                {
+                    MemberModel.this.data.optJSONObject( "dynamicAttributes" ).put( "imageURL",  href );
+                    /* save new image reference in model */
+                    MemberModel.this.saveAsync(new AOMEmptyCallback() {
+                        @Override
+                        public void isDone(ApiomatRequestException exception) {
+                            if(_callback != null)
+                            {
+                                _callback.isDone(exception);
+                            }
+                            else
+                            {
+                                System.err.println("Exception was thrown: " + exception.getMessage());
+                            }
+                        }
+                    });
+                }
+                else
+                {
+                    if(_callback != null && ex != null)
+                    {
+                        _callback.isDone(ex);
+                    }
+                    else if(_callback != null && ex == null)
+                    {
+                        _callback.isDone(new ApiomatRequestException(Status.HREF_NOT_FOUND));
+                    }
+                    else
+                    {
+                        System.err.println("Exception was thrown: " + (ex != null?ex.getMessage(): Status.HREF_NOT_FOUND.toString()));
+                    }
+                }
+            }
+        };
+        
+        if(Datastore.getInstance().sendOffline("POST"))
+        {
+            final String sendHREF = Datastore.getInstance().createStaticDataHref(true);
+            String refHref = Datastore.getInstance().getOfflineHandler().addTask("POST", sendHREF, data);
+            cb.isDone(refHref, null);
+        }
+        else
+        {
+            Datastore.getInstance( ).postStaticDataOnServerAsync( data, true, cb);
+        }
+    }
+    
+    public void deleteImage() throws Exception
+    {
+        final String imageURL = getImageURL();
+        this.data.optJSONObject( "dynamicAttributes" ).remove( "imageURL" );
+        if(Datastore.getInstance().sendOffline("DELETE"))
+        {
+            Datastore.getInstance().getOfflineHandler().addTask("DELETE", imageURL);
+            this.save();
+        }
+        else
+        {
+            Datastore.getInstance( ).deleteOnServer(imageURL);
+            this.save();
+        }
+    }
+    
+    public void deleteImageAsync(final AOMEmptyCallback _callback)
+    {
+        AOMEmptyCallback cb = new AOMEmptyCallback() {
+            @Override
+            public void isDone(ApiomatRequestException ex)
+            {
+                if(ex == null )
+                {
+                    MemberModel.this.data.optJSONObject( "dynamicAttributes" ).remove( "imageURL" );
+                    /* save deleted image reference in model */
+                    MemberModel.this.saveAsync(new AOMEmptyCallback() {
+                        @Override
+                        public void isDone(ApiomatRequestException exception) {
+                            if(_callback != null)
+                            {
+                                _callback.isDone(exception);
+                            }
+                            else
+                            {
+                                System.err.println("Exception was thrown: " + exception.getMessage());
+                            }
+                        }
+                    });
+                }
+                _callback.isDone(ex);
+            }
+        };
+        final String url = getImageURL();
+        if(Datastore.getInstance().sendOffline("DELETE"))
+        {
+            Datastore.getInstance().getOfflineHandler().addTask("DELETE", url);
+            cb.isDone(null);
+        }
+        else
+        {
+            Datastore.getInstance( ).deleteOnServerAsync( url, cb);
+        }
+    }
+
+    /**
+    * Returns an URL of the image. <br/>
+    * You can provide several parameters to manipulate the image:
+    * @param width the width of the image, 0 to use the original size. If only width or height are provided, 
+    *        the other value is computed.
+    * @param height the height of the image, 0 to use the original size. If only width or height are provided, 
+    *        the other value is computed.
+    * @param backgroundColorAsHex the background color of the image, null or empty uses the original background color. Caution: Don't send the '#' symbol!
+    *        Example: <i>ff0000</i>
+    * @param alpha the alpha value of the image, null to take the original value.
+    * @param format the file format of the image to return, e.g. <i>jpg</i> or <i>png</i>
+    * @return the URL of the image
+    */
+    public String getImageURL(int width, int height, String backgroundColorAsHex, 
+        Double alpha, String format)
+    {
+        if(this.data.optJSONObject( "dynamicAttributes" ).isNull( "imageURL" ))
+        {
+            return null;
+        }
+        String parameters =  ".img?apiKey=" + User.apiKey + "&system=" + this.getSystem();
+        parameters += "&width=" + width + "&height=" + height;
+        if(backgroundColorAsHex != null) 
+        {
+            parameters += "&bgcolor=" + backgroundColorAsHex;
+        }
+        if(alpha != null)
+            parameters += "&alpha=" + alpha;
+        if(format != null)
+            parameters += "&format=" + format;
+        return (String)this.data.optJSONObject( "dynamicAttributes" ).get( "imageURL" ) + parameters;
+    }
+
+
+        public Integer getAge()
+    {
+        if(this.data.optJSONObject( "dynamicAttributes" ).isNull( "age" ))
+        {
+            return null;
+        }
+        return (Integer)this.data.optJSONObject( "dynamicAttributes" ).get( "age" );
+    }
+
+    public void setAge( Integer arg )
+    {
+        Integer age = arg;
+        this.data.optJSONObject( "dynamicAttributes" ).put( "age",  age );
+    }
+
+        public double getLocLatitude( )
     {
          final JSONArray loc = this.data.optJSONArray( "loc" );
          final Object raw = loc.get( 0 );
@@ -276,93 +572,16 @@ public class MemberModel extends AbstractClientDataModel
         {
             this.data.put( "loc", new JSONArray( ) );
         }
+        if ( this.data.getJSONArray( "loc" ).length( ) == 0 )
+        {
+            this.data.getJSONArray( "loc" ).put( 0, 0 );
+        }
 
         this.data.getJSONArray( "loc" ).put( 1, longitude );
     }
 
-    /**
-    * Returns the URL of the image.
-    * @return the URL of the image
-    */
-    public String getImageURL()
-    {
-        if(this.data.optJSONObject( "dynamicAttributes" ).isNull( "imageURL" ))
-        {
-            return null;
-        }
-        return (String)this.data.optJSONObject( "dynamicAttributes" ).get( "imageURL" ) 
-            + ".img?apiKey=" + MemberModel.apiKey + "&system=" + this.getSystem();
-    }
 
-    /**
-    * Returns an URL of the image. <br/>
-    * You can provide several parameters to manipulate the image:
-    * @param width the width of the image, 0 to use the original size. If only width or height are provided, 
-    *        the other value is computed.
-    * @param height the height of the image, 0 to use the original size. If only width or height are provided, 
-    *        the other value is computed.
-    * @param backgroundColorAsHex the background color of the image, null or empty uses the original background color. Caution: Don't send the '#' symbol!
-    *        Example: <i>ff0000</i>
-    * @param alpha the alpha value of the image, null to take the original value.
-    * @param format the file format of the image to return, e.g. <i>jpg</i> or <i>png</i>
-    * @return the URL of the image
-    */
-    public String getImageURL(int width, int height, String backgroundColorAsHex, 
-        Double alpha, String format)
-    {
-        if(this.data.optJSONObject( "dynamicAttributes" ).isNull( "imageURL" ))
-        {
-            return null;
-        }
-        String parameters =  ".img?apiKey=" + MemberModel.apiKey + "&system=" + this.getSystem();
-        parameters += "&width=" + width + "&height=" + height;
-        if(backgroundColorAsHex != null) {
-            parameters += "&bgcolor=" + backgroundColorAsHex;
-        }
-        if(alpha != null)
-            parameters += "&alpha=" + alpha;
-        if(format != null)
-            parameters += "&format=" + format;
-        return (String)this.data.optJSONObject( "dynamicAttributes" ).get( "imageURL" ) + parameters;
-    }
-
-    public String postImage( byte[] data ) throws Exception
-    {
-        String href = Datastore.getInstance( ).postStaticDataOnServer( data, true);
-        this.data.optJSONObject( "dynamicAttributes" ).put( "imageURL",  href );
-        return href;
-    }
-    
-    public void deleteImage() throws Exception
-    {
-        Datastore.getInstance( ).deleteOnServer( getImageURL());
-    }
-
-    public Integer getAge()
-    {
-        if(this.data.optJSONObject( "dynamicAttributes" ).isNull( "age" ))
-        {
-            return null;
-        }
-        return (Integer)this.data.optJSONObject( "dynamicAttributes" ).get( "age" );
-    }
-
-    public void setAge( Integer arg )
-    {
-        Integer age = arg;
-        this.data.optJSONObject( "dynamicAttributes" ).put( "age",  age );
-    }
-    public Date getDateOfBirth( )
-    {
-        return new Date( this.data.getLong( "dateOfBirth" ) );
-    }
-
-    public void setDateOfBirth( Date dateOfBirth )
-    {
-        this.data.putOpt( "dateOfBirth", dateOfBirth.getTime( ) );
-    }
-
-    public String getCompany()
+        public String getCompany()
     {
         if(this.data.optJSONObject( "dynamicAttributes" ).isNull( "company" ))
         {
@@ -376,28 +595,5 @@ public class MemberModel extends AbstractClientDataModel
         String company = arg;
         this.data.optJSONObject( "dynamicAttributes" ).put( "company",  company );
     }
-    public String getProfession()
-    {
-        if(this.data.optJSONObject( "dynamicAttributes" ).isNull( "profession" ))
-        {
-            return null;
-        }
-        return (String)this.data.optJSONObject( "dynamicAttributes" ).get( "profession" );
-    }
 
-    public void setProfession( String arg )
-    {
-        String profession = arg;
-        this.data.optJSONObject( "dynamicAttributes" ).put( "profession",  profession );
-    }
-    public String getUserName()
-    {
-         return this.data.optString( "userName" );
-    }
-
-    public void setUserName( String arg )
-    {
-        String userName = arg;
-        this.data.put( "userName", userName );
-    }
 }

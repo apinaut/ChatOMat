@@ -70,14 +70,15 @@ public class ConversationModel extends AbstractClientDataModel
     */
     public String getSystem( )
     {
-        return MemberModel.system;
+
+        return User.system;
     }
 
     /**
     * Returns a list of objects of this class filtered by the given query from server
     * @query a query filtering the results in SQL style (@see <a href="http://doc.apiomat.com">documentation</a>)
     */
-    public static final List<ConversationModel> getConversationModels( String query ) throws Exception
+    public static final List<ConversationModel> getConversationModels( String query ) throws ApiomatRequestException
     {
         ConversationModel o = new ConversationModel();
         return Datastore.getInstance( ).loadFromServer( ConversationModel.class, o.getModuleName( ),
@@ -123,6 +124,19 @@ public class ConversationModel extends AbstractClientDataModel
         Datastore.getInstance().loadFromServerAsync(ConversationModel.class,o.getModuleName(), o.getSimpleName(), withReferencedHrefs, query, listAOMCallback);
     }
 
+
+        public String getSubject()
+    {
+         return this.data.optString( "subject" );
+    }
+
+    public void setSubject( String arg )
+    {
+        String subject = arg;
+        this.data.put( "subject", subject );
+    }
+
+    
     public List<ChatMessageModel> loadMessages( String query ) throws Exception
     {
         final String refUrl = this.data.optString( "messagesHref" );
@@ -193,7 +207,17 @@ public class ConversationModel extends AbstractClientDataModel
         {
             throw new ApiomatRequestException(Status.SAVE_REFERENECE_BEFORE_REFERENCING);
         }
-        String refHref = Datastore.getInstance( ).postOnServer(refData, this.data.optString("messagesHref"));
+        
+        String refHref = null;
+        /* Let's check if we use offline storage or send req to server */
+        if(Datastore.getInstance().sendOffline("POST"))
+        {
+            refHref = Datastore.getInstance().getOfflineHandler().addTask("POST", getHref(), refData, "messages" );
+        } 
+        else
+        {
+            refHref = Datastore.getInstance( ).postOnServer(refData, this.data.optString("messagesHref"));
+        }
         
         if(refHref!=null && refHref.length()>0)
         {
@@ -220,63 +244,90 @@ public class ConversationModel extends AbstractClientDataModel
             }
             return;
         }
-        AOMCallback<String> cb = new AOMCallback<String>() {
-            @Override
-            public void isDone(String refHref, ApiomatRequestException ex) {
-                if(ex == null && refHref!=null && refHref.length()>0)
-                {
-                    //check if local list contains refData with same href
-                    if(ModelHelper.containsHref(messages, refHref)==false)
+         /* check if we've use offline storage */
+        if(Datastore.getInstance().sendOffline("POST"))
+        {
+            final String refHref = Datastore.getInstance().getOfflineHandler().addTask("POST", getHref(), refData, "messages" );
+            /* check if local list contains refData with same href */
+            if(ModelHelper.containsHref(messages, refHref)==false)
+            {
+                messages.add(refData);
+            }
+            if(callback != null)
+            {
+                callback.isDone(null);
+            }
+        }
+        else
+        {
+            AOMCallback<String> cb = new AOMCallback<String>() {
+                @Override
+                public void isDone(String refHref, ApiomatRequestException ex) {
+                    if(ex == null && refHref!=null && refHref.length()>0)
                     {
-                        messages.add(refData);
+                        //check if local list contains refData with same href
+                        if(ModelHelper.containsHref(messages, refHref)==false)
+                        {
+                            messages.add(refData);
+                        }
+                    }
+                    if(callback != null)
+                    {
+                        callback.isDone(ex);
+                    }
+                    else
+                    {
+                        System.err.println("Exception was thrown: " + ex.getMessage());
                     }
                 }
-                if(callback != null)
-                {
-                    callback.isDone(ex);
-                }
-                else
-                {
-                    System.err.println("Exception was thrown: " + ex.getMessage());
-                }
-            }
-        };
-        Datastore.getInstance( ).postOnServerAsync(refData, this.data.optString("messagesHref"), cb);
+            };
+            Datastore.getInstance( ).postOnServerAsync(refData, this.data.optString("messagesHref"), cb);
+        }
     }
     
     public void removeMessages( ChatMessageModel refData ) throws Exception
     {
         final String id = refData.getHref( ).substring( refData.getHref( ).lastIndexOf( "/" ) + 1 );
-        Datastore.getInstance( ).deleteOnServer( this.data.optString("messagesHref") + "/" + id);
-        messages.remove(refData);
+        if(Datastore.getInstance().sendOffline("DELETE"))
+        {
+            Datastore.getInstance().getOfflineHandler().addTask("DELETE", getHref(), refData, "messages" );
+        }
+        else
+        {
+            Datastore.getInstance( ).deleteOnServer( this.data.optString("messagesHref") + "/" + id);
+        }
+            messages.remove(refData);
     }
     
     public void removeMessagesAsync( final ChatMessageModel refData, final AOMEmptyCallback callback )
     {
         final String id = refData.getHref( ).substring( refData.getHref( ).lastIndexOf( "/" ) + 1 );
-        AOMEmptyCallback cb = new AOMEmptyCallback() {
-            @Override
-            public void isDone(ApiomatRequestException ex) {
-                if(ex == null) {
-                    messages.remove(refData);
-                }
-                callback.isDone(ex);
+        if(Datastore.getInstance().sendOffline("DELETE"))
+        {
+            Datastore.getInstance().getOfflineHandler().addTask("DELETE", getHref(), refData, "messages");
+            messages.remove(refData);
+            if(callback != null)
+            {
+                callback.isDone(null);
             }
-        };
-        Datastore.getInstance( ).deleteOnServerAsync( this.data.optString("messagesHref") + "/" + id, cb);
+        }
+        else
+        {
+            AOMEmptyCallback cb = new AOMEmptyCallback() {
+                @Override
+                public void isDone(ApiomatRequestException ex) {
+                    if(ex == null) {
+                        messages.remove(refData);
+                    }
+                    callback.isDone(ex);
+                }
+            };
+            Datastore.getInstance( ).deleteOnServerAsync( this.data.optString("messagesHref") + "/" + id, cb);
+        }
     }
 
-    public String getSubject()
-    {
-         return this.data.optString( "subject" );
-    }
 
-    public void setSubject( String arg )
-    {
-        String subject = arg;
-        this.data.put( "subject", subject );
-    }
-    public List getAttendeeUserNames()
+        public List getAttendeeUserNames()
     {
          JSONArray array = (JSONArray)this.data.opt( "attendeeUserNames" );
         return fromJSONArray(array);
@@ -287,4 +338,5 @@ public class ConversationModel extends AbstractClientDataModel
         Vector attendeeUserNames = toVector( arg);
         this.data.put( "attendeeUserNames", attendeeUserNames );
     }
+
 }

@@ -24,28 +24,12 @@
  * THIS FILE IS GENERATED AUTOMATICALLY. DON'T MODIFY IT. */
 package com.apiomat.frontend;
 
-import android.net.Uri;
-import android.util.Base64;
-
-import com.apiomat.frontend.Datastore;
-import com.apiomat.frontend.Datastore.AOMCacheStrategy;
-import com.apiomat.frontend.basics.MemberModel;
-import com.apiomat.frontend.callbacks.AOMCallback;
-import com.apiomat.frontend.callbacks.AOMEmptyCallback;
-import com.apiomat.frontend.helper.AOMTask;
-import org.apache.http.*;
-import org.apache.http.client.ClientProtocolException;
-import org.apache.http.client.methods.*;
-import org.apache.http.conn.ConnectionPoolTimeoutException;
-import org.apache.http.entity.ByteArrayEntity;
-import org.apache.http.entity.HttpEntityWrapper;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.util.EntityUtils;
-import rpc.json.me.JSONArray;
-
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.EOFException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -54,46 +38,78 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.zip.GZIPInputStream;
 
+import org.apache.http.Header;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpRequest;
+import org.apache.http.HttpResponse;
+import org.apache.http.HttpStatus;
+import org.apache.http.NameValuePair;
+
+import com.apiomat.frontend.ApiomatRequestException;
+import com.apiomat.frontend.Datastore;
+import com.apiomat.frontend.Status;
+import com.apiomat.frontend.basics.MemberModel;
+import com.apiomat.frontend.basics.User;
+import com.apiomat.frontend.callbacks.AOMCallback;
+import com.apiomat.frontend.callbacks.AOMEmptyCallback;
+import com.apiomat.frontend.helper.AOMTask;
+import org.apache.http.client.ClientProtocolException;
+import org.apache.http.client.methods.HttpDelete;
+import org.apache.http.client.methods.HttpEntityEnclosingRequestBase;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpPut;
+import org.apache.http.client.methods.HttpRequestBase;
+import org.apache.http.conn.ConnectionPoolTimeoutException;
+import org.apache.http.entity.ByteArrayEntity;
+import org.apache.http.entity.HttpEntityWrapper;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.util.EntityUtils;
+import rpc.json.me.JSONArray;
+import android.content.Context;
+import android.net.Uri;
+import android.util.Base64;
+
+import com.apiomat.frontend.offline.AOMOfflineHandler;
+
 /**
  * This class is your interface to the apiOmat service. Each method lets your
  * post, put, get or delete your data models. Basic handling is already
  * implemented in your generated module classes, so it won't be necessary in
- * most cases to call the {@link com.apiomat.frontend.Datastore} methods directly.
+ * most cases to call the {@link Datastore} methods directly.
  * 
  * @author andreasfey, phimi
  */
 public class Datastore
 {
-	private DefaultHttpClient httpClient;
-
-	public static enum AOMCacheStrategy
-	{
-		/**
-		 * Use no caching
-		 */
-		NO_CACHE,
-		/**
-		 * Only use cache, do not use requests
-		 */
-		CACHE_ONLY,
-		/**
-		 * Check server for newest version and use cache if possible
-		 */
-		CHECK_SERVER_ELSE_CACHE
-	}
-
 	private static Datastore myInstance;
 
 	private static AOMCacheStrategy cacheStrategy = AOMCacheStrategy.CHECK_SERVER_ELSE_CACHE;
+	private static AOMOfflineStrategy offlineStrategy = AOMOfflineStrategy.NO_OFFLINE_HANDLING;
+	private static Context appCtx = null;
 	private final AOMModelStore modelCache = new AOMModelStore( );
 	private final String baseUrl;
 	private final String apiKey;
 	private final String userName;
 	private final String password;
 	private final String system;
+	private DefaultHttpClient httpClient;
+	private AOMOfflineHandler offlineHandler = null;
+
+	private Datastore( final String baseUrl, final String apiKey,
+		final String userName, final String password, final String system )
+	{
+		this.baseUrl = baseUrl;
+		this.apiKey = apiKey;
+		this.userName = userName;
+		this.password = password;
+		this.system = system;
+	}
 
 	/**
-	 * Returns a singleton instance of the {@link com.apiomat.frontend.Datastore}
+	 * Returns a singleton instance of the {@link Datastore}
 	 * 
 	 * @return singleton instance
 	 */
@@ -107,20 +123,10 @@ public class Datastore
 		throw new IllegalStateException( );
 	}
 
-	private Datastore( final String baseUrl, final String apiKey,
-		final String userName, final String password, final String system )
-	{
-		this.baseUrl = baseUrl;
-		this.apiKey = apiKey;
-		this.userName = userName;
-		this.password = password;
-		this.system = system;
-	}
-
 	/**
-	 * Configures and returns a {@link com.apiomat.frontend.Datastore} instance
+	 * Configures and returns a {@link Datastore} instance
 	 * 
-	 * @deprecated Please us {@link #configure(MemberModel member)} instead
+	 * @deprecated Please us {@link #configure(com.apiomat.frontend.basics.User user)} instead
 	 * 
 	 * @param baseUrl
 	 *        The base URL of the APIOMAT service; usually <a
@@ -134,6 +140,7 @@ public class Datastore
 	 *        Your password
 	 * @return A configured Datastore instance
 	 */
+	@Deprecated
 	public static Datastore configure( final String baseUrl,
 		final String apiKey, final String userName, final String password )
 	{
@@ -142,13 +149,15 @@ public class Datastore
 	}
 
 	/**
-	 * Configures and returns a {@link com.apiomat.frontend.Datastore} instance
+	 * Configures and returns a {@link Datastore} instance
 	 * 
+	 * @deprecated Use Datastore.configure(user) instead
 	 * @param member
 	 *        The member where userName and password are the login
 	 *        credentials
 	 * @return A configured Datastore instance
 	 */
+	@Deprecated
 	public static Datastore configure( final MemberModel member )
 	{
 		myInstance = new Datastore( MemberModel.baseURL, MemberModel.apiKey,
@@ -158,6 +167,21 @@ public class Datastore
 
 	/**
 	 * Configures and returns a {@link Datastore} instance
+	 * 
+	 * @param user
+	 *        The user where userName and password are the login
+	 *        credentials
+	 * @return A configured Datastore instance
+	 */
+	public static Datastore configure( final User user )
+	{
+		myInstance = new Datastore( User.baseURL, User.apiKey,
+			user.getUserName( ), user.getPassword( ), user.getSystem( ) );
+		return myInstance;
+	}
+
+	/**
+	 * Configures and returns a {@link com.apiomat.frontend.Datastore} instance
 	 * 
 	 * @param baseUrl The base URL of the APIOMAT service; usually <a
 	 *        href="http://apiomat.org/yambas/rest/apps/">http://apiomat.org/yambas/rest/apps/</a> (see the member model
@@ -177,9 +201,24 @@ public class Datastore
 	}
 
 	/**
+	 * Configures and returns a {@link com.apiomat.frontend.Datastore} instance
+	 * 
+	 * @param baseUrl The base URL of the APIOMAT service; usually <a
+	 *        href="http://apiomat.org/yambas/rest/apps/">http://apiomat.org/yambas/rest/apps/</a> (see the member model
+	 *        class)
+	 * @param apiKey The api key of your application (see the member model class)
+	 * @param system The system which will be used (see the member model class) (should be LIVE,TEST,STAGING)
+	 * @return A configured Datastore instance
+	 */
+	public static Datastore configure( final String baseUrl, final String apiKey, final String system )
+	{
+		return configure( baseUrl, apiKey, null, null, null, system );
+	}
+
+	/**
 	 * Sets the caching strategy for this datastore.
 	 * 
-	 * @param cacheStrategy the caching strategy to use; see {@link AOMCacheStrategy}
+	 * @param cacheStrategy the caching strategy to use; see {@link com.apiomat.frontend.Datastore.AOMCacheStrategy}
 	 * @return the datastore
 	 */
 	public static Datastore setCachingStrategy( AOMCacheStrategy cacheStrategy )
@@ -193,12 +232,59 @@ public class Datastore
 	}
 
 	/**
+	 * Set the offline strategy for you application.
+	 * 
+	 * @param _offlineStrategy The strategy
+	 * @param _context The context (for offline initalization) Normally it will be teh application context
+	 * @param _listener (optional) This listener will be informed if offline task are executed successfully or with
+	 *        errors
+	 * 
+	 * @return Configured {@link Datastore} instance
+	 */
+	public static Datastore setOfflineStrategy( AOMOfflineStrategy _offlineStrategy, Context _context,
+		AOMOfflineHandler.AOMOfflineListener _listener ) throws IllegalStateException, RuntimeException
+	{
+		if ( myInstance == null )
+		{
+			throw new IllegalStateException( "Please configure Datastore first" );
+		}
+		Datastore.offlineStrategy = _offlineStrategy;
+		Datastore.appCtx = _context;
+		/* initialize handler */
+		if ( myInstance.offlineHandler == null )
+		{
+			myInstance.offlineHandler = new AOMOfflineHandler( _context );
+			if ( _listener != null )
+			{
+				myInstance.offlineHandler.addListener( _listener );
+			}
+		}
+		return myInstance;
+	}
+
+	private static String copyStreamToString( final InputStream is )
+		throws IOException
+	{
+		final BufferedReader reader = new BufferedReader( new InputStreamReader(
+			is ) );
+		final StringBuilder content = new StringBuilder( );
+		String line;
+
+		while ( ( line = reader.readLine( ) ) != null )
+		{
+			content.append( line );
+		}
+
+		return content.toString( );
+	}
+
+	/**
 	 * Method for posting the model to the server <u>initially</u>. That is, at
 	 * the point using this method the model has not HREF yet.
 	 * 
 	 * @param dataModel the model to save on server
 	 * @return the HREF of the posted model
-	 * @throws ApiomatRequestException
+	 * @throws com.apiomat.frontend.ApiomatRequestException
 	 */
 	public String postOnServer( final AbstractClientDataModel dataModel )
 		throws ApiomatRequestException
@@ -218,7 +304,7 @@ public class Datastore
 	 *        HREF of the model to post (or the address to post the model
 	 *        to)
 	 * @return the HREF of the posted model
-	 * @throws ApiomatRequestException
+	 * @throws com.apiomat.frontend.ApiomatRequestException
 	 */
 	public String postOnServer( final AbstractClientDataModel dataModel,
 		final String href ) throws ApiomatRequestException
@@ -235,7 +321,7 @@ public class Datastore
 				e.getMessage( ) );
 		}
 	}
-	
+
 	/**
 	 * Method for posting the model to the server in an update manner. That is,
 	 * at the point using this method the model has a HREF.
@@ -253,7 +339,7 @@ public class Datastore
 		try
 		{
 			final String data = dataModel.toJson( );
-			final StringEntity entity = new StringEntity( data, "utf-8" );
+			final HttpEntity entity = new StringEntity( data, "utf-8" );
 			new AOMTask<String>( )
 			{
 				@Override
@@ -283,10 +369,35 @@ public class Datastore
 	 * @throws Exception
 	 */
 	public String postStaticDataOnServer( final byte[ ] rawData,
-		final boolean isImage ) throws Exception
+		final boolean isImage ) throws ApiomatRequestException
 	{
 		return postOnServer( new ByteArrayEntity( rawData ),
 			createStaticDataHref( isImage ) );
+	}
+
+	/**
+	 * Method to post static data to the server. Do not forget to store the
+	 * returned HREF to the owner model, since this method only stores the byte
+	 * array on the server.
+	 * Request works in background thread and not on the UI thread
+	 * 
+	 * @param rawData
+	 *        raw data as byte array
+	 * @param isImage
+	 *        TRUE to store the raw data as image, FALSE to store as video
+	 * @param _callback The object which will called if response come back from server.
+	 */
+	public void postStaticDataOnServerAsync( final byte[ ] rawData,
+		final boolean isImage, final AOMCallback<String> _callback )
+	{
+		new AOMTask<String>( )
+		{
+			@Override
+			public String doRequest( ) throws ApiomatRequestException
+			{
+				return postOnServer( new ByteArrayEntity( rawData ), createStaticDataHref( isImage ) );
+			}
+		}.execute( _callback );
 	}
 
 	/**
@@ -297,7 +408,7 @@ public class Datastore
 	 * @param dataModelHref
 	 *        HREF address of the model
 	 * @return the model object
-	 * @throws ApiomatRequestException
+	 * @throws com.apiomat.frontend.ApiomatRequestException
 	 */
 	public <T extends AbstractClientDataModel> T loadFromServer(
 		final Class<T> clazz, final String dataModelHref )
@@ -334,7 +445,7 @@ public class Datastore
 	 * @param withReferencedHrefs
 	 *        set to true to get also all HREFs of referenced models
 	 * @return the model object
-	 * @throws ApiomatRequestException
+	 * @throws com.apiomat.frontend.ApiomatRequestException
 	 */
 	public <T extends AbstractClientDataModel> T loadFromServer(
 		final Class<T> clazz, final String dataModelHref,
@@ -395,7 +506,7 @@ public class Datastore
 	 * @param dataModelHref
 	 *        HREF address of the model
 	 * @return the model object
-	 * @throws ApiomatRequestException
+	 * @throws com.apiomat.frontend.ApiomatRequestException
 	 */
 	public <T extends AbstractClientDataModel> T loadFromServer(
 		final T dataModel, final String dataModelHref )
@@ -415,7 +526,7 @@ public class Datastore
 	 * @param withReferencedHrefs
 	 *        set to true to get also all HREFs of referenced models
 	 * @return the model object
-	 * @throws ApiomatRequestException
+	 * @throws com.apiomat.frontend.ApiomatRequestException
 	 */
 	public <T extends AbstractClientDataModel> T loadFromServer(
 		final T dataModel, final String dataModelHref,
@@ -448,7 +559,7 @@ public class Datastore
 			if ( cacheStrategy.equals( AOMCacheStrategy.CHECK_SERVER_ELSE_CACHE ) )
 			{
 				final String jsonStr = this.modelCache.getModel( dataModelHref );
-				if ( jsonStr == null || jsonStr.isEmpty( ) )
+				if ( jsonStr == null || jsonStr.equals( "" ) )
 				{
 					throw new ApiomatRequestException( Status.INSTANTIATE_EXCEPTION );
 				}
@@ -510,7 +621,7 @@ public class Datastore
 	 * @param query
 	 *        a query string to filter the results
 	 * @return all models fitting the search parameters
-	 * @throws ApiomatRequestException
+	 * @throws com.apiomat.frontend.ApiomatRequestException
 	 */
 	public <T extends AbstractClientDataModel> List<T> loadFromServer(
 		final Class<T> clazz, final String moduleName,
@@ -523,7 +634,8 @@ public class Datastore
 	/**
 	 * Loads existing models from server in background
 	 * 
-	 * @param <T> defines the returned data type (Must by subtype of {@link AbstractClientDataModel})
+	 * @param <T> defines the returned data type (Must by subtype of
+	 *        {@link com.apiomat.frontend.AbstractClientDataModel})
 	 * 
 	 * @param clazz
 	 *        class of the models
@@ -566,7 +678,7 @@ public class Datastore
 	 * @param query
 	 *        a query string to filter the results
 	 * @return all models fitting the search parameters
-	 * @throws ApiomatRequestException
+	 * @throws com.apiomat.frontend.ApiomatRequestException
 	 */
 	public <T extends AbstractClientDataModel> List<T> loadFromServer(
 		final Class<T> clazz, final String moduleName,
@@ -613,7 +725,7 @@ public class Datastore
 	 * @param query
 	 *        a query string to filter the results
 	 * @return all models fitting the search parameters
-	 * @throws ApiomatRequestException
+	 * @throws com.apiomat.frontend.ApiomatRequestException
 	 */
 	public <T extends AbstractClientDataModel> List<T> loadFromServer(
 		final Class<T> clazz, final String dataModelHref, final String query )
@@ -652,9 +764,9 @@ public class Datastore
 	 * @param query
 	 *        a query string to filter the results
 	 * @return all models fitting the search parameters
-	 * @throws ApiomatRequestException
+	 * @throws com.apiomat.frontend.ApiomatRequestException
 	 */
-	public <T extends AbstractClientDataModel> List<T> loadFromServer(
+	protected <T extends AbstractClientDataModel> List<T> loadFromServer(
 		final Class<T> clazz, final String dataModelHref,
 		final boolean withReferencedHrefs, final String query )
 		throws ApiomatRequestException
@@ -675,7 +787,7 @@ public class Datastore
 
 		// check if we have etag for this list in modelstore but only if we don't use a query
 		AtomicReference<String> eTag = new AtomicReference<String>( );
-		if ( cacheStrategy.equals( AOMCacheStrategy.CHECK_SERVER_ELSE_CACHE ) && ( query == null || query.isEmpty( ) ) )
+		if ( cacheStrategy.equals( AOMCacheStrategy.CHECK_SERVER_ELSE_CACHE ) && ( query == null || query.equals( "" ) ) )
 		{
 			eTag.set( this.modelCache.getEtagForModels( dataModelHref ) );
 		}
@@ -751,7 +863,7 @@ public class Datastore
 	 *        a query string to filter the results
 	 * @param getCallback method which will called when request is finished
 	 */
-	public <T extends AbstractClientDataModel> void loadFromServerAsync(
+	protected <T extends AbstractClientDataModel> void loadFromServerAsync(
 		final Class<T> clazz, final String dataModelHref,
 		final boolean withReferencedHrefs, final String query,
 		final AOMCallback<List<T>> getCallback )
@@ -769,18 +881,103 @@ public class Datastore
 	}
 
 	/**
+	 * Loads a resource, e.g. an image with the user credentials as byte array.
+	 * 
+	 * @param href the URl of the image
+	 * @return the resource as byte array
+	 * @throws com.apiomat.frontend.ApiomatRequestException
+	 */
+	public byte[ ] loadResource( String href ) throws ApiomatRequestException
+	{
+		byte[ ] result = null;
+		try
+		{
+			HttpGet request = new HttpGet( href );
+			if ( this.userName != null && this.password != null )
+			{
+				request.setHeader( "Authorization", getAuthenticationHeader( ) );
+			}
+			request.setHeader( "X-apiomat-apikey", this.apiKey );
+			request.setHeader( "X-apiomat-sdkVersion", MemberModel.sdkVersion );
+			request.setHeader( "X-apiomat-system", this.system );
+
+			HttpResponse httpResponse = getHttpClient( ).execute( request );
+			final int statusCode = httpResponse.getStatusLine( ).getStatusCode( );
+			final HttpEntity entity = httpResponse.getEntity( );
+
+			if ( HttpStatus.SC_OK == statusCode )
+			{
+				// Get etag from header if there
+				if ( entity != null )
+				{
+					try
+					{
+						result = EntityUtils.toByteArray( entity );
+					}
+					catch ( EOFException e1 )
+					{
+						// all is ok we will ignore this cause it could be that returned entity is empty
+						// e.g. Not-Modified, Update request, etc
+					}
+				}
+			}
+			else
+			{
+				final String errorStr = entity != null ? EntityUtils.toString( entity, "UTF-8" ) : "";
+				throw new ApiomatRequestException( statusCode, 200, errorStr, errorStr );
+			}
+		}
+		catch ( ConnectionPoolTimeoutException e )
+		{
+			throw new ApiomatRequestException(
+				Status.IO_EXCEPTION.getStatusCode( ), HttpStatus.SC_OK, e.getMessage( ) );
+		}
+		catch ( ClientProtocolException e )
+		{
+			throw new ApiomatRequestException(
+				Status.WRONG_CLIENT_PROTOCOL.getStatusCode( ), HttpStatus.SC_OK,
+				e.getMessage( ) );
+		}
+		catch ( IOException e )
+		{
+			throw new ApiomatRequestException(
+				Status.IO_EXCEPTION.getStatusCode( ), HttpStatus.SC_OK, e.getMessage( ) );
+		}
+
+		return result;
+	}
+
+	/**
+	 * Loads a resource, e.g. an image with the user credentials as byte array in the background.
+	 * 
+	 * @param href the URl of the image
+	 * @param callback Method which will called after response from from server returned
+	 */
+	public void loadResourceAsync( final String href, final AOMCallback<byte[ ]> callback )
+	{
+		new AOMTask<byte[ ]>( )
+		{
+			@Override
+			public byte[ ] doRequest( ) throws ApiomatRequestException
+			{
+				return loadResource( href );
+			}
+		}.execute( callback );
+	}
+
+	/**
 	 * Deletes the data model from the server
 	 * 
 	 * @param dataModel
 	 *        the data model object
-	 * @throws ApiomatRequestException
+	 * @throws com.apiomat.frontend.ApiomatRequestException
 	 */
 	public void deleteOnServer( AbstractClientDataModel dataModel )
 		throws ApiomatRequestException
 	{
 		deleteOnServer( dataModel.getHref( ) );
 	}
-	
+
 	/**
 	 * Deletes the data model from the server on a background thread and not on UI
 	 * 
@@ -799,7 +996,7 @@ public class Datastore
 	 * 
 	 * @param href
 	 *        the data model href
-	 * @throws ApiomatRequestException
+	 * @throws com.apiomat.frontend.ApiomatRequestException
 	 */
 	public void deleteOnServer( String href ) throws ApiomatRequestException
 	{
@@ -809,7 +1006,7 @@ public class Datastore
 		}
 		sendRequest( href, null, false, new HttpDelete( ), null, 204 );
 	}
-	
+
 	/**
 	 * Deletes the data model with given href from the server on a background thread and not on UI
 	 * 
@@ -828,14 +1025,14 @@ public class Datastore
 				return null;
 			}
 		}.execute( callback );
-	}	
+	}
 
 	/**
 	 * Updates the data model from the server
 	 * 
 	 * @param dataModel
 	 *        the data model object
-	 * @throws ApiomatRequestException
+	 * @throws com.apiomat.frontend.ApiomatRequestException
 	 */
 	public void updateOnServer( AbstractClientDataModel dataModel )
 		throws ApiomatRequestException
@@ -855,6 +1052,60 @@ public class Datastore
 				Status.UNSUPPORTED_ENCODING.getStatusCode( ), 200,
 				e.getMessage( ) );
 		}
+	}
+
+	/**
+	 * Send a PUT request with given json data to the server
+	 * 
+	 * @param href
+	 * @param json
+	 * @throws ApiomatRequestException
+	 */
+	public void updateOnServer( final String href, final String json ) throws ApiomatRequestException
+	{
+		if ( href == null || href.isEmpty( ) )
+		{
+			throw new ApiomatRequestException( Status.HREF_NOT_FOUND.getStatusCode( ), 1,
+				Status.HREF_NOT_FOUND.getReasonPhrase( ) );
+		}
+
+		try
+		{
+			sendRequest( href, "", false, new HttpPut( ), new StringEntity( json, "utf-8" ), 200 );
+		}
+		catch ( UnsupportedEncodingException e )
+		{
+			throw new ApiomatRequestException(
+				Status.UNSUPPORTED_ENCODING.getStatusCode( ), 200,
+				e.getMessage( ) );
+		}
+	}
+	
+	/**
+	 * Send a PUT request with given json data to the server.
+	 * Request works on background thread and not on the UI thread
+	 * 
+	 * @param href HREF of the model to put (or the address to put the data to)
+	 * @param json The JSON string which will be send to server
+	 * @param callback The method which will called if response come back from server.
+	 * 
+	 */
+	public void updateOnServerAsync( final String href, final String json, final AOMEmptyCallback callback )
+	{
+		new AOMTask<Void>( )
+		{
+			@Override
+			public Void doRequest( ) throws ApiomatRequestException
+			{
+				updateOnServer( href, json );
+				return null;
+			}
+		}.execute( callback );
+	}
+
+	public AOMOfflineHandler getOfflineHandler( )
+	{
+		return offlineHandler;
 	}
 
 	private String postOnServer( final HttpEntity entity,
@@ -890,17 +1141,17 @@ public class Datastore
 		return this.baseUrl + "/" + href;
 	}
 
-	private String createStaticDataHref( final boolean image )
+	public String createStaticDataHref( final boolean image )
 	{
 		final StringBuilder sb = new StringBuilder( );
 		sb.append( this.baseUrl );
 		sb.append( "/data/" );
-		sb.append( image ? "images" : "videos" );
+		sb.append( image ? "images" : "files" );
 		sb.append( '/' );
 		return sb.toString( );
 	}
 
-	private String createModelHref( final String moduleName,
+	public String createModelHref( final String moduleName,
 		final String simpleModelName )
 	{
 		final StringBuilder sb = new StringBuilder( );
@@ -910,22 +1161,6 @@ public class Datastore
 		sb.append( '/' );
 		sb.append( simpleModelName );
 		return sb.toString( );
-	}
-
-	private static String copyStreamToString( final InputStream is )
-		throws IOException
-	{
-		final BufferedReader reader = new BufferedReader( new InputStreamReader(
-			is ) );
-		final StringBuilder content = new StringBuilder( );
-		String line;
-
-		while ( ( line = reader.readLine( ) ) != null )
-		{
-			content.append( line );
-		}
-
-		return content.toString( );
 	}
 
 	private void setHeader( HttpRequest request )
@@ -974,14 +1209,20 @@ public class Datastore
 		String resultStr = null;
 		try
 		{
-			String reqUri =
-				Uri.parse( href ).buildUpon( )
+			String reqUri = href;
+			if ( request.getMethod( ).equals( "GET" ) )
+			{
+				reqUri = Uri.parse( href ).buildUpon( )
 					.appendQueryParameter( "withReferencedHrefs", String.valueOf( withReferencedHrefs ) )
 					.appendQueryParameter( "q", query == null ? "" : query ).toString( );
-
+			}
+			/* check if we've to use the offline store */
 			request.setURI( new URI( reqUri ) );
 			request.setHeader( "Accept", "application/json" );
-			request.setHeader( "Authorization", getAuthenticationHeader( ) );
+			if ( this.userName != null && this.password != null )
+			{
+				request.setHeader( "Authorization", getAuthenticationHeader( ) );
+			}
 			request.setHeader( "X-apiomat-apikey", this.apiKey );
 			request.setHeader( "X-apiomat-sdkVersion", MemberModel.sdkVersion );
 			request.setHeader( "Accept-Encoding", "gzip" );
@@ -1081,6 +1322,37 @@ public class Datastore
 	}
 
 	/**
+	 * Return true if we have to use offline handler
+	 * The decision depends on selected {@link com.apiomat.frontend.Datastore.AOMOfflineStrategy} and given _method
+	 * 
+	 * @param _method The HTTP method
+	 * 
+	 * @return true if we will use offline store else false
+	 */
+	public boolean sendOffline( String _method )
+	{
+		boolean useOffline =
+			Datastore.offlineStrategy != null &&
+				Datastore.offlineStrategy.equals( AOMOfflineStrategy.NO_OFFLINE_HANDLING ) == false &&
+				this.offlineHandler != null && this.offlineHandler.isConnected( ) == false;
+		switch ( Datastore.offlineStrategy )
+		{
+		case USE_OFFLINE_CACHE:
+			useOffline &= true;
+			break;
+		/* case USE_OFFLINE_READONLY:
+		 * useOffline &= _method.equals("GET");
+		 * break;
+		 * case USE_OFFLINE_WRITEONLY:
+		 * useOffline &= _method.equals("POST") || _method.equals("PUT") || _method.equals("DELETE");
+		 * break; */
+		default:
+			useOffline = false;
+		}
+		return useOffline;
+	}
+
+	/**
 	 * use singleton httpClient
 	 * 
 	 * @return
@@ -1088,6 +1360,28 @@ public class Datastore
 	private DefaultHttpClient getHttpClient( )
 	{
 		return new DefaultHttpClient( );
+	}
+
+	public static enum AOMCacheStrategy
+	{
+		/**
+		 * Use no caching
+		 */
+		NO_CACHE,
+		/**
+		 * Only use cache, do not use requests
+		 */
+		CACHE_ONLY,
+		/**
+		 * Check server for newest version and use cache if possible
+		 */
+		CHECK_SERVER_ELSE_CACHE;
+	}
+
+	public static enum AOMOfflineStrategy
+	{
+		NO_OFFLINE_HANDLING,
+		USE_OFFLINE_CACHE
 	}
 
 	private class GzipEntityWrapper extends HttpEntityWrapper
