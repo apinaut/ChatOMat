@@ -38,8 +38,7 @@ import rpc.json.me.*;
 /**
 * Generated default class representing a user in your app 
 */
-@Deprecated
-public class MemberModel extends AbstractClientDataModel
+public class User extends AbstractClientDataModel
 {
     public static final String apiKey = "9160863907729554565";
     public static final String baseURL = "https://apiomat.org/yambas/rest/apps/ChatOMatAsync";
@@ -48,7 +47,7 @@ public class MemberModel extends AbstractClientDataModel
     /**
     * Default constructor. Needed for internal processing.
     */
-    public MemberModel ( )
+    public User ( )
     {
         super( );
     }
@@ -58,7 +57,7 @@ public class MemberModel extends AbstractClientDataModel
     */
     public String getSimpleName( )
     {
-        return "MemberModel";
+        return "User";
     }
 
     /**
@@ -198,10 +197,10 @@ public class MemberModel extends AbstractClientDataModel
     * Returns a list of objects of this class filtered by the given query from server
     * @query a query filtering the results in SQL style (@see <a href="http://doc.apiomat.com">documentation</a>)
     */
-    public static final List<MemberModel> getMemberModels( String query ) throws ApiomatRequestException
+    public static final List<User> getUsers( String query ) throws ApiomatRequestException
     {
-        MemberModel o = new MemberModel();
-        return Datastore.getInstance( ).loadFromServer( MemberModel.class, o.getModuleName( ),
+        User o = new User();
+        return Datastore.getInstance( ).loadFromServer( User.class, o.getModuleName( ),
             o.getSimpleName( ), query );
     }
     
@@ -212,9 +211,9 @@ public class MemberModel extends AbstractClientDataModel
      * @param query a query filtering the results in SQL style (@see <a href="http://doc.apiomat.com">documentation</a>)
      * @param listAOMCallback The callback method which will called when request is finished
      */
-    public static void getMemberModelsAsync(final String query, final AOMCallback<List<MemberModel>> listAOMCallback) 
+    public static void getUsersAsync(final String query, final AOMCallback<List<User>> listAOMCallback) 
     {
-       getMemberModelsAsync(query, false, listAOMCallback);
+       getUsersAsync(query, false, listAOMCallback);
     }
     
     /**
@@ -223,10 +222,10 @@ public class MemberModel extends AbstractClientDataModel
     * @query a query filtering the results in SQL style (@see <a href="http://doc.apiomat.com">documentation</a>)
     * @param withReferencedHrefs set to true to get also all HREFs of referenced models
     */
-    public static final List<MemberModel> getMemberModels( String query, boolean withReferencedHrefs ) throws Exception
+    public static final List<User> getUsers( String query, boolean withReferencedHrefs ) throws Exception
     {
-        MemberModel o = new MemberModel();
-        return Datastore.getInstance( ).loadFromServer( MemberModel.class, o.getModuleName( ),
+        User o = new User();
+        return Datastore.getInstance( ).loadFromServer( User.class, o.getModuleName( ),
             o.getSimpleName( ), withReferencedHrefs, query);
     }
     
@@ -238,10 +237,10 @@ public class MemberModel extends AbstractClientDataModel
      * @param withReferencedHrefs set true to get also all HREFs of referenced models
      * @param listAOMCallback The callback method which will called when request is finished
      */
-    public static void getMemberModelsAsync(final String query, final boolean withReferencedHrefs, final AOMCallback<List<MemberModel>> listAOMCallback) 
+    public static void getUsersAsync(final String query, final boolean withReferencedHrefs, final AOMCallback<List<User>> listAOMCallback) 
     {
-         MemberModel o = new  MemberModel();
-        Datastore.getInstance().loadFromServerAsync(MemberModel.class,o.getModuleName(), o.getSimpleName(), withReferencedHrefs, query, listAOMCallback);
+         User o = new  User();
+        Datastore.getInstance().loadFromServerAsync(User.class,o.getModuleName(), o.getSimpleName(), withReferencedHrefs, query, listAOMCallback);
     }
 
 
@@ -391,9 +390,9 @@ public class MemberModel extends AbstractClientDataModel
             public void isDone(String href, ApiomatRequestException ex) {
                 if(ex == null && href!=null && href.length()>0)
                 {
-                    MemberModel.this.data.optJSONObject( "dynamicAttributes" ).put( "imageURL",  href );
+                    User.this.data.optJSONObject( "dynamicAttributes" ).put( "imageURL",  href );
                     /* save new image reference in model */
-                    MemberModel.this.saveAsync(new AOMEmptyCallback() {
+                    User.this.saveAsync(new AOMEmptyCallback() {
                         @Override
                         public void isDone(ApiomatRequestException exception) {
                             if(_callback != null)
@@ -461,9 +460,9 @@ public class MemberModel extends AbstractClientDataModel
             {
                 if(ex == null )
                 {
-                    MemberModel.this.data.optJSONObject( "dynamicAttributes" ).remove( "imageURL" );
+                    User.this.data.optJSONObject( "dynamicAttributes" ).remove( "imageURL" );
                     /* save deleted image reference in model */
-                    MemberModel.this.saveAsync(new AOMEmptyCallback() {
+                    User.this.saveAsync(new AOMEmptyCallback() {
                         @Override
                         public void isDone(ApiomatRequestException exception) {
                             if(_callback != null)
