@@ -215,7 +215,7 @@ public class SubjectActivity extends Activity {
 
 		/* Start timer to fetch messages periodically */
 		this.t = new Timer();
-		this.t.scheduleAtFixedRate(new RefreshMessagesTimer(), 0, 20000);
+		this.t.scheduleAtFixedRate(new RefreshMessagesTimer(), 0, 2000) ;
 	}
 
 	@Override
