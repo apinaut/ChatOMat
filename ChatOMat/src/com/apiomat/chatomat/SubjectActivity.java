@@ -45,6 +45,7 @@ import android.widget.GridView;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.TextView.OnEditorActionListener;
+import android.widget.Toast;
 
 import com.apiomat.chatomat.adapter.AttendeeAdapter;
 import com.apiomat.chatomat.adapter.ChatMessageAdapter;
@@ -104,6 +105,7 @@ public class SubjectActivity extends Activity {
 
 		/* new message */
 		final EditText newMessage = (EditText) findViewById(R.id.newMessageText);
+		newMessage.setHint(R.string.newMessage);
 		newMessage.setOnEditorActionListener(new OnEditorActionListener() {
 
 			@SuppressWarnings("synthetic-access")
@@ -133,6 +135,7 @@ public class SubjectActivity extends Activity {
 															@Override
 															public void isDone(
 																	ApiomatRequestException exception) {
+																Toast.makeText(SubjectActivity.this, "Your message has been sent successfully", Toast.LENGTH_LONG).show();
 																SubjectActivity.this.chatMessageAdapter
 																		.add(chatMessageModel);
 																newMessage

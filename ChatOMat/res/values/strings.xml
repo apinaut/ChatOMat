@@ -33,5 +33,8 @@
     <string name="profileSex">Sex</string>
     <string name="profileAge">Age</string>
     
+    <!-- Message -->
+    <string name="newMessage">What you want to say?</string>
+    
 
 </resources>

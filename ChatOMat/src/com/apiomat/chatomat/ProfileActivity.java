@@ -31,6 +31,7 @@ import java.util.concurrent.ExecutionException;
 import android.app.ActionBar;
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -53,6 +54,7 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Spinner;
+import android.widget.Toast;
 
 import com.apiomat.frontend.ApiomatRequestException;
 import com.apiomat.frontend.basics.User;
@@ -236,6 +238,11 @@ public class ProfileActivity extends Activity {
 			if (this.user == null) {
 				this.user = new User();
 			}
+			final ProgressDialog progressDialog = new ProgressDialog(ProfileActivity.this);
+			progressDialog.setTitle("saving User ...");
+			progressDialog.setCancelable(false);
+			progressDialog.setIndeterminate(false);
+			progressDialog.show();
 
 			this.user
 					.setUserName(((EditText) findViewById(R.id.profileUserName))
@@ -312,10 +319,14 @@ public class ProfileActivity extends Activity {
 														.getUserName());
 										UserCache
 												.putUser(ProfileActivity.this.user);
+										progressDialog.dismiss();
 										goBack(view);
 
 									}
 								});
+					} else {
+						progressDialog.dismiss();
+						Toast.makeText(ProfileActivity.this, "User already exists and is loaded", Toast.LENGTH_LONG).show();
 					}
 
 				}

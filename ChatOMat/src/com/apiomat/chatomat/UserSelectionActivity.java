@@ -30,6 +30,7 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.ProgressDialog;
 
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.res.Resources;
@@ -75,7 +76,7 @@ public class UserSelectionActivity extends Activity {
 	boolean startNewConversation = true;
 	ListView list;
 	int position;
-	ProgressDialog progressDialog;
+	Context context;
 
 	@SuppressWarnings("unchecked")
 	@Override
@@ -91,6 +92,9 @@ public class UserSelectionActivity extends Activity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.activity_member_selection);
 		Resources res = getResources();
+		
+		this.context=getApplicationContext();
+		
 		Bitmap bMap = BitmapFactory.decodeResource(res,
 				R.drawable.apinauts_header_clean);
 		BitmapDrawable actionBarBackground = new BitmapDrawable(res, bMap);
@@ -116,17 +120,11 @@ public class UserSelectionActivity extends Activity {
 					UserSelectionActivity.this.position = position;
 					final User user = (User) UserSelectionActivity.this.list
 							.getItemAtPosition(position);
-					progressDialog = new ProgressDialog(getApplicationContext());
-					progressDialog.setTitle("Processing...");
-					progressDialog.setMessage("Please wait.");
-					progressDialog.setCancelable(false);
-					progressDialog.setIndeterminate(true);
-					progressDialog.show();
+			
 					user.loadMeAsync(new AOMEmptyCallback() {
 
 						@Override
 						public void isDone(ApiomatRequestException exception) {
-							progressDialog.dismiss();
 							if (exception == null) {
 								addAttendeeInConversation(user,
 										UserSelectionActivity.this.conv);
@@ -157,12 +155,7 @@ public class UserSelectionActivity extends Activity {
 			filter.append("userName != \"" + UserCache.getMyself() + "\"");
 		}
 
-		progressDialog = new ProgressDialog(getApplicationContext());
-		progressDialog.setTitle("Processing...");
-		progressDialog.setMessage("Please wait.");
-		progressDialog.setCancelable(false);
-		progressDialog.setIndeterminate(true);
-		progressDialog.show();
+		
 		// Get Users with filter
 		User.getUsersAsync(filter.toString(),
 				new AOMCallback<List<User>>() {
@@ -172,7 +165,6 @@ public class UserSelectionActivity extends Activity {
 					public void isDone(List<User> resultObject,
 							ApiomatRequestException exception) {
 						for (User u : resultObject) {
-							progressDialog.dismiss();
 							UserSelectionActivity.this.adapter.add(u);
 						}
 
