@@ -40,7 +40,7 @@ import rpc.json.me.*;
 */
 public class ChatMessageModel extends AbstractClientDataModel
 {
-    private MemberModel sender = null;
+    private User sender = null;
     /**
     * Default constructor. Needed for internal processing.
     */
@@ -126,17 +126,17 @@ public class ChatMessageModel extends AbstractClientDataModel
 
 
     
-    public MemberModel loadSender( ) throws Exception
+    public User loadSender( ) throws Exception
     {
         final String refUrl = this.data.optString("senderHref" );
-        sender = Datastore.getInstance( ).loadFromServer( MemberModel.class, refUrl);
+        sender = Datastore.getInstance( ).loadFromServer( User.class, refUrl);
         return sender;
     }
     
     /**
     * Getter for local linked variable
     */
-    public MemberModel getSender() 
+    public User getSender() 
     {
         return sender;
     }
@@ -161,9 +161,9 @@ public class ChatMessageModel extends AbstractClientDataModel
             return;
         }
         
-        AOMCallback<MemberModel> cb = new AOMCallback<MemberModel>() {
+        AOMCallback<User> cb = new AOMCallback<User>() {
             @Override
-            public void isDone(MemberModel result,
+            public void isDone(User result,
                                ApiomatRequestException ex) {
                 if (ex == null) {
                     sender = result;
@@ -181,10 +181,10 @@ public class ChatMessageModel extends AbstractClientDataModel
                 }
             }
         };
-        Datastore.getInstance().loadFromServerAsync(MemberModel.class, refUrl, cb);
+        Datastore.getInstance().loadFromServerAsync(User.class, refUrl, cb);
     }
 
-    public String postSender( MemberModel refData ) throws ApiomatRequestException
+    public String postSender( User refData ) throws ApiomatRequestException
     {
         String href = refData.getHref();
         if(href == null || href.length() < 1) 
@@ -210,7 +210,7 @@ public class ChatMessageModel extends AbstractClientDataModel
         return href;
     }
     
-    public void postSenderAsync(final MemberModel refData, final AOMEmptyCallback callback ) {
+    public void postSenderAsync(final User refData, final AOMEmptyCallback callback ) {
         String href = refData.getHref();
         if(href == null || href.length() < 1)
         {
@@ -258,7 +258,7 @@ public class ChatMessageModel extends AbstractClientDataModel
         }
     }
     
-    public void removeSender( MemberModel refData ) throws Exception
+    public void removeSender( User refData ) throws Exception
     {
         final String id = refData.getHref( ).substring( refData.getHref( ).lastIndexOf( "/" ) + 1 );
         if(Datastore.getInstance().sendOffline("DELETE"))
@@ -272,7 +272,7 @@ public class ChatMessageModel extends AbstractClientDataModel
             sender = null;
     }
     
-    public void removeSenderAsync( final MemberModel refData, final AOMEmptyCallback callback )
+    public void removeSenderAsync( final User refData, final AOMEmptyCallback callback )
     {
         final String id = refData.getHref( ).substring( refData.getHref( ).lastIndexOf( "/" ) + 1 );
         if(Datastore.getInstance().sendOffline("DELETE"))

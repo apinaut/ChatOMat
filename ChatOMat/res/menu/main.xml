@@ -1,0 +1,18 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android" >
+
+        
+    <item
+        android:id="@+id/action_profile"
+        android:orderInCategory="100"
+        android:showAsAction="always"
+        android:icon="@drawable/apiomat_weissv1"
+        android:title="@string/action_profile"/>
+    <item
+        android:id="@+id/action_add_attendee"
+        android:orderInCategory="100"
+        android:showAsAction="always"
+        android:icon="@drawable/plusv1"
+        android:title="@string/action_add_attendee"/>
+    
+
+</menu>

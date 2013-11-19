@@ -44,7 +44,7 @@ public class MemberModel extends AbstractClientDataModel
     public static final String apiKey = "9160863907729554565";
     public static final String baseURL = "https://apiomat.org/yambas/rest/apps/ChatOMatAsync";
     public static final String system = "LIVE";
-    public static final String sdkVersion = "1.7-76";
+    public static final String sdkVersion = "1.7-69";
     /**
     * Default constructor. Needed for internal processing.
     */
@@ -286,17 +286,6 @@ public class MemberModel extends AbstractClientDataModel
         this.data.optJSONObject( "dynamicAttributes" ).put( "sex",  sex );
     }
 
-        public String getLastName()
-    {
-         return this.data.optString( "lastName" );
-    }
-
-    public void setLastName( String arg )
-    {
-        String lastName = arg;
-        this.data.put( "lastName", lastName );
-    }
-
         public Map getDynamicAttributes()
     {
         return this.data.optJSONObject( "dynamicAttributes" ).getMyHashMap( );
@@ -313,6 +302,17 @@ public class MemberModel extends AbstractClientDataModel
             this.data.optJSONObject( "dynamicAttributes" ).getMyHashMap( ).clear();
         }
         this.data.optJSONObject( "dynamicAttributes" ).getMyHashMap( ).putAll(map);
+    }
+
+        public String getLastName()
+    {
+         return this.data.optString( "lastName" );
+    }
+
+    public void setLastName( String arg )
+    {
+        String lastName = arg;
+        this.data.put( "lastName", lastName );
     }
 
         public String getFirstName()

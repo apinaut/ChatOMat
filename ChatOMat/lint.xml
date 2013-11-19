@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<lint>
+    <issue id="DrawAllocation">
+        <ignore path="src/com/apiomat/chatomat/views/UserView.java" />
+    </issue>
+    <issue id="NewApi">
+        <ignore path="src/com/apiomat/chatomat/MainActivity.java" />
+        <ignore path="src/com/apiomat/chatomat/MemberSelectionActivity.java" />
+        <ignore path="src/com/apiomat/chatomat/ProfileActivity.java" />
+        <ignore path="src/com/apiomat/chatomat/SubjectActivity.java" />
+        <ignore path="src/com/apiomat/chatomat/UserSelectionActivity.java" />
+    </issue>
+</lint>
