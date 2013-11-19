@@ -1,7 +1,7 @@
 Chat O Mat
 =============
 
-This one is a little demo project how the API O MAT backend as a service can be used to build a chat client in android.
+This one is a little demo project how the apiOmat backend as a service can be used to build a chat client in android.
 Also this is a demo project, the chat works 100% and you are encouraged to use it chatting with friends from your smartphone.
 
 
